@@ -11,6 +11,8 @@
 - [技術選定確定版](docs/tech-stack-decision.md)
 - [AWSアーキテクチャ設計](docs/aws-architecture.md)
 - [AWS構築Runbook](docs/aws-build-runbook.md)
+- [MVP最小構成（App Runner）](docs/aws-mvp-minimal-architecture.md)
+- [MVP最小構成Runbook（App Runner）](docs/aws-build-runbook-minimal.md)
 - [CI/CD設計](docs/cicd-design.md)
 - [環境変数一覧](docs/env.md)
 - [RAG処理設計](docs/rag-design.md)

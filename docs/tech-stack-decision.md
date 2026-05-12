@@ -9,10 +9,13 @@ AnswerDesk AI のMVP実装に向けて、未確定だった主要技術選定を
 
 ### 2.1 フロントエンド
 - React
+- Amplify Hosting
 
 ### 2.2 バックエンド
 - Python
 - FastAPI
+- AWS App Runner（MVP最小構成）
+- ECS Fargate（将来拡張候補）
 
 ### 2.3 DB / 検索
 - PostgreSQL
@@ -39,12 +42,12 @@ AnswerDesk AI のMVP実装に向けて、未確定だった主要技術選定を
 - Amazon S3
 
 ### 2.9 非同期処理
-- Amazon SQS
-- Worker でPDF処理、チャンク生成、Embedding生成を実行
+- MVP初期は簡略化
+- 将来的に Amazon SQS + Worker を導入する
 
 ### 2.10 インフラ
 - フロントエンド: Amplify Hosting
-- API: ECS Fargate + ALB
+- API: App Runner（MVP最小構成）
 - DB: RDS PostgreSQL
 - ログ/監視: CloudWatch
 - シークレット管理: Secrets Manager
@@ -71,6 +74,11 @@ AnswerDesk AI のMVP実装に向けて、未確定だった主要技術選定を
 - 初期実装がシンプル
 - バックエンド側でバリデーションや保存処理を一元化できる
 
+### 3.5 App Runner
+- ECS + ALB より構築と運用が軽い
+- FastAPI を小さく始めるMVPに向いている
+- HTTPS公開を比較的簡単に進められる
+
 ---
 
 ## 4. 追加方針
@@ -78,6 +86,7 @@ AnswerDesk AI のMVP実装に向けて、未確定だった主要技術選定を
 - PDF対応範囲はMVPでは限定し、将来OCRを追加する
 - アップロード方式は将来 presigned URL に変更可能とする
 - AIクライアントは抽象化する
+- 利用増加時に SQS / Worker / ECS へ拡張する
 
 ---
 
@@ -87,4 +96,5 @@ AnswerDesk AI のMVP実装に向けて、未確定だった主要技術選定を
 - PDF抽出: PyMuPDF
 - JWT保存方式: HttpOnly Secure Cookie
 - S3アップロード方式: API経由
+- API実行基盤: App Runner
 - 検索: PostgreSQL + pgvector
