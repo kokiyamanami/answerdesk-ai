@@ -3,8 +3,8 @@
 ## 1. 結論
 AnswerDesk AI のMVPでは、以下の構成を採用する。
 
-- 回答生成: **OpenAI**
-- Embedding生成: **OpenAI**
+- 回答生成: **OpenAI (`gpt-4.1-mini`)**
+- Embedding生成: **OpenAI (`text-embedding-3-small`)**
 - 検索: **PostgreSQL + pgvector**
 
 ---
@@ -16,12 +16,14 @@ AnswerDesk AI のMVPでは、以下の構成を採用する。
 - FastAPI との相性がよい
 - RAG構成の実装例が豊富
 - 初期段階で高品質な回答生成を行いやすい
+- `gpt-4.1-mini` は速度・コスト・品質のバランスがよい
 
 ### 2.2 OpenAI を Embedding に採用する理由
 - テキストのベクトル化APIが提供されている
 - FAQ、PDFチャンク、ユーザー質問を同じ方式で埋め込みできる
 - pgvector と組み合わせやすい
 - MVP段階で構成をシンプルに保てる
+- `text-embedding-3-small` はMVP用途でコスト効率が高い
 
 ### 2.3 PostgreSQL + pgvector を検索に採用する理由
 - 既存DBにベクトル検索を統合できる
@@ -67,11 +69,13 @@ AnswerDesk AI では、このEmbedding APIを利用して、FAQやPDFチャン�
 
 ### 5.1 回答生成
 - OpenAI のチャット系モデルを利用する
+- MVPでは `gpt-4.1-mini` を採用する
 - 検索で得たチャンクを根拠として渡す
 - 根拠がない内容は回答しないようプロンプトで制御する
 
 ### 5.2 Embedding生成
 - OpenAI の Embedding API を利用する
+- MVPでは `text-embedding-3-small` を採用する
 - FAQ登録時にEmbedding生成
 - PDF処理時に各チャンクのEmbedding生成
 - ユーザー質問時にもEmbedding生成
@@ -84,7 +88,7 @@ AnswerDesk AI では、このEmbedding APIを利用して、FAQやPDFチャン�
 ---
 
 ## 6. 実装方針
-- OpenAI 呼び出しはアプリケ��ション内でラッパー層を作る
+- OpenAI 呼び出しはアプリケーション内でラッパー層を作る
 - 回答生成クライアントとEmbedding生成クライアントを分離する
 - モデル名は設定値で切り替えられるようにする
 - 将来的に Bedrock 等へ差し替えできるよう抽象化する
@@ -93,6 +97,11 @@ AnswerDesk AI では、このEmbedding APIを利用して、FAQやPDFチャン�
 - `LLMClient`
 - `EmbeddingClient`
 - `VectorSearchRepository`
+
+推奨環境変数例:
+- `OPENAI_API_KEY`
+- `OPENAI_CHAT_MODEL=gpt-4.1-mini`
+- `OPENAI_EMBEDDING_MODEL=text-embedding-3-small`
 
 ---
 
@@ -110,6 +119,6 @@ AnswerDesk AI では、このEmbedding APIを利用して、FAQやPDFチャン�
 ## 8. MVP時点の結論
 MVPでは、スピードと実装容易性を優先し、以下を正式採用とする。
 
-- 回答生成: **OpenAI**
-- Embedding生成: **OpenAI**
+- 回答生成: **OpenAI (`gpt-4.1-mini`)**
+- Embedding生成: **OpenAI (`text-embedding-3-small`)**
 - 検索: **PostgreSQL + pgvector**

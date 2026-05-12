@@ -13,6 +13,11 @@ MVPでは以下を対象とする。
 
 実装上は1つの文書処理ジョブにまとめてもよい。
 
+前提:
+- PDF抽出ライブラリは **PyMuPDF** を採用する
+- MVPでは **テキスト抽出可能なPDFのみ対応** とする
+- OCR前提PDFや画像中心PDFは対象外とする
+
 ---
 
 ## 3. 状態遷移
@@ -31,17 +36,18 @@ MVPでは以下を対象とする。
 ---
 
 ## 4. ジョブフロー
-1. APIがPDFを保存
-2. `documents` レコード作成
-3. キューへジョブ投入
-4. Workerがジョブ取得
-5. `processing` に更新
-6. 既存チャンク整理
-7. テキスト抽出
-8. チャンク化
-9. Embedding生成
-10. `document_chunks` 保存
-11. `processed` に更新
+1. APIがPDFを受け取る
+2. FastAPI から S3 に保存する
+3. `documents` レコード作成
+4. キューへジョブ投入
+5. Workerがジョブ取得
+6. `processing` に更新
+7. PyMuPDF でテキスト抽出
+8. テキスト抽出失敗時は `failed`
+9. チャンク化
+10. OpenAI Embedding API でEmbedding生成
+11. `document_chunks` 保存
+12. `processed` に更新
 
 失敗時:
 - `failed` に更新
@@ -83,6 +89,7 @@ MVPでは以下を対象とする。
 ---
 
 ## 9. 将来拡張
+- OCR対応
 - CSVインポートジョブ
 - 再試行回数制御
 - デッドレターキュー

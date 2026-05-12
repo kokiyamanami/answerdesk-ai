@@ -13,11 +13,12 @@
 ---
 
 ## 3. 推奨方式
-MVPでは **FastAPI + JWT** を推奨する。
+MVPでは **FastAPI + JWT** を採用し、**HttpOnly Secure Cookie** に保存する。
 
 理由:
 - 実装が比較的シンプル
 - React + FastAPI 構成と相性が良い
+- localStorage より安全性が高い
 - 将来的に Cognito へ移行可能
 
 ---
@@ -26,19 +27,21 @@ MVPでは **FastAPI + JWT** を推奨する。
 1. 管理者がメールアドレスとパスワードを入力
 2. APIが資格情報を検証
 3. 正常時、アクセストークンを発行
-4. フロントエンドが認証状態を保持
-5. 認証付きAPI呼び出しで `Authorization: Bearer <token>` を送信
+4. アクセストークンを HttpOnly Secure Cookie に保存する
+5. フロントエンドは cookie 付きでAPI呼び出しを行う
 
 ---
 
 ## 5. トークン設計
 ### 5.1 MVP推奨
 - Access Token のみで開始
+- 保存先は HttpOnly Secure Cookie
+- `SameSite=Lax` を基本とする
 - 有効期限は短め（例: 1日）
 
 ### 5.2 将来拡張
 - Refresh Token 導入
-- HttpOnly Cookie 化
+- CSRF対策強化
 - Cognito 移行
 
 ---
