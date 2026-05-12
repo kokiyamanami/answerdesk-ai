@@ -8,6 +8,7 @@ AnswerDesk AI の継続的インテグレーション / 継続的デプロイの
 ## 2. 基本方針
 - Runbook は人が初回構築や手動対応を行うための手順書
 - CI/CD はコード変更後の反復作業を自動化する仕組み
+- MVP初期は App Runner 前提で小さく始める
 - 初回のAWS環境構築はRunbookベースで行い、その後の更新をCI/CDで自動化する
 
 ---
@@ -21,7 +22,7 @@ AnswerDesk AI の継続的インテグレーション / 継続的デプロイの
 ### CD
 - API Docker build
 - ECR push
-- ECS deploy
+- App Runner deploy
 - Frontend build / deploy
 
 ---
@@ -30,6 +31,7 @@ AnswerDesk AI の継続的インテグレーション / 継続的デプロイの
 ### 4.1 Backend
 - GitHub Actions を利用
 - `main` への push を契機に build / test / deploy
+- Docker image を ECR に push し、App Runner サービスを更新する
 
 ### 4.2 Frontend
 - Amplify Hosting の GitHub連携を利用
@@ -37,14 +39,15 @@ AnswerDesk AI の継続的インテグレーション / 継続的デプロイの
 
 ---
 
-## 5. Backend CIフロー
+## 5. Backend CI/CDフロー
 1. GitHub Actions 起動
 2. Python依存関係インストール
 3. Lint実行
 4. Test実行
 5. Docker image build
 6. Docker image push to ECR
-7. ECS service update
+7. App Runner サービスのデプロイ更新
+8. `/health` の疎通確認
 
 ---
 
@@ -62,21 +65,21 @@ AnswerDesk AI の継続的インテグレーション / 継続的デプロイの
 GitHub Actions 側で必要なもの:
 - AWSアクセス権限
 - ECR push権限
-- ECS deploy権限
+- App Runner 更新権限
 
 アプリケーション実行時の機密情報:
 - OpenAI API Key
 - DB接続情報
 - JWT Secret
 
-これらは Secrets Manager で管理し、ECS実行時に注入する。
+これらは Secrets Manager で管理し、App Runner 実行時に注入する。
 
 ---
 
 ## 8. デプロイ方針
 ### Backend
 - Docker image tag は commit SHA を利用
-- ECS service update で新しいtask definitionに切替
+- ECR push 後、App Runner の対象イメージを更新する
 - health check 成功を確認する
 
 ### Frontend
@@ -96,7 +99,7 @@ MVPでは以下のどちらかを採用する。
 ## 10. rollback方針
 ### Backend
 - 直前のECR image tagへ戻す
-- ECS task definition を前バージョンへ切り替える
+- App Runner の参照イメージを前バージョンに戻す
 
 ### Frontend
 - Amplifyの過去デプロイへ戻す
@@ -107,5 +110,5 @@ MVPでは以下のどちらかを採用する。
 - PR時CI追加
 - staging環境追加
 - migrationの自動化
-- Canary deploy
+- ECS Fargate への移行
 - Slack通知連携
