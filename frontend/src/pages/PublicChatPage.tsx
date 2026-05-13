@@ -199,8 +199,9 @@ export default function PublicChatPage() {
       </div>
 
       {/* Messages */}
+      <div style={{ flex: 1, overflowY: 'auto' }}>
       <div style={{
-        flex: 1, overflowY: 'auto',
+        maxWidth: 800, margin: '0 auto',
         padding: '20px 16px',
         display: 'flex', flexDirection: 'column', gap: 16,
       }}>
@@ -337,15 +338,16 @@ export default function PublicChatPage() {
         )}
         <div ref={bottomRef} />
       </div>
+      </div>
 
       {/* Input */}
       <div style={{
-        padding: '12px 16px 20px',
         background: '#fff',
         borderTop: '1px solid rgba(0,0,0,.07)',
         boxShadow: '0 -4px 20px rgba(0,0,0,.05)',
         flexShrink: 0,
       }}>
+      <div style={{ maxWidth: 800, margin: '0 auto', padding: '12px 16px 20px' }}>
         <div style={{
           display: 'flex', gap: 8, alignItems: 'flex-end',
           background: '#f1f5f9', borderRadius: 16,
@@ -379,7 +381,12 @@ export default function PublicChatPage() {
             }}
           >↑</button>
         </div>
-
+        <div style={{ textAlign: 'center', marginTop: 8 }}>
+          <a href="/" style={{ fontSize: 11, color: '#94a3b8', textDecoration: 'none' }}>
+            Powered by <span style={{ fontWeight: 700 }}>AnswerDesk AI</span>
+          </a>
+        </div>
+      </div>
       </div>
     </div>
   )
