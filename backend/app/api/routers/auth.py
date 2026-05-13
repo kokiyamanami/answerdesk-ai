@@ -1,10 +1,10 @@
 from fastapi import APIRouter, Depends, HTTPException, Response, status
-from pydantic import BaseModel, EmailStr
+from pydantic import BaseModel
 from sqlalchemy.orm import Session
 
 from app.api.deps import get_current_user
 from app.core.config import settings
-from app.core.security import create_access_token, verify_password
+from app.core.security import create_access_token, hash_password, verify_password
 from app.db.session import get_db
 from app.models.user import User
 
@@ -26,6 +26,45 @@ class UserResponse(BaseModel):
 
 class LoginResponse(BaseModel):
     user: UserResponse
+
+
+class RegisterRequest(BaseModel):
+    email: str
+    password: str
+
+
+@router.post("/register", response_model=LoginResponse, status_code=status.HTTP_201_CREATED)
+def register(body: RegisterRequest, response: Response, db: Session = Depends(get_db)):
+    if len(body.password) < 8:
+        raise HTTPException(
+            status_code=status.HTTP_422_UNPROCESSABLE_ENTITY,
+            detail={"code": "password_too_short", "message": "パスワードは8文字以上で入力してください。"},
+        )
+    existing = db.query(User).filter(User.email == body.email.lower()).first()
+    if existing:
+        raise HTTPException(
+            status_code=status.HTTP_409_CONFLICT,
+            detail={"code": "email_taken", "message": "このメールアドレスはすでに使われています。"},
+        )
+    user = User(
+        email=body.email.lower(),
+        password_hash=hash_password(body.password),
+        display_name=body.email.split('@')[0],
+    )
+    db.add(user)
+    db.commit()
+    db.refresh(user)
+
+    token = create_access_token(str(user.id))
+    response.set_cookie(
+        key="access_token",
+        value=token,
+        httponly=True,
+        secure=settings.cookie_secure,
+        samesite=settings.cookie_samesite,
+        max_age=settings.jwt_expires_in,
+    )
+    return LoginResponse(user=UserResponse(id=str(user.id), email=user.email, display_name=user.display_name))
 
 
 @router.post("/login", response_model=LoginResponse)

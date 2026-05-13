@@ -3,6 +3,7 @@ import { AuthProvider } from './contexts/AuthContext'
 import RequireAuth from './components/RequireAuth'
 import AdminLayout from './components/AdminLayout'
 import LoginPage from './pages/LoginPage'
+import RegisterPage from './pages/RegisterPage'
 import BotPage from './pages/BotPage'
 import DesignPage from './pages/DesignPage'
 import ContactPage from './pages/ContactPage'
@@ -18,6 +19,7 @@ function App() {
       <BrowserRouter>
         <Routes>
           <Route path="/login" element={<LoginPage />} />
+          <Route path="/register" element={<RegisterPage />} />
           <Route path="/c/:slug" element={<PublicChatPage />} />
 
           <Route element={<RequireAuth />}>

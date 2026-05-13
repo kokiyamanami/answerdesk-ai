@@ -11,8 +11,8 @@ api.interceptors.response.use(
     if (error.response?.status === 401) {
       // /login 以外のページにいる場合のみリダイレクト（/auth/me の401はAuthContextで処理するため除外）
       const isAuthMe = error.config?.url?.includes('/auth/me')
-      const isLoginPage = window.location.pathname === '/login'
-      if (!isAuthMe && !isLoginPage) {
+      const isAuthPage = ['/login', '/register'].includes(window.location.pathname)
+      if (!isAuthMe && !isAuthPage) {
         window.location.href = '/login'
       }
     }
