@@ -122,8 +122,14 @@ async def upload_document(
     db.commit()
     db.refresh(doc)
 
-    # SQS へジョブ投入
-    _enqueue_process_document(str(doc.id))
+    # SQS へジョブ投入（dev環境でSQS未設定の場合は同期で直接実行）
+    if settings.sqs_queue_url:
+        _enqueue_process_document(str(doc.id))
+    else:
+        import threading
+        from app.worker.jobs.process_document import process_document
+        t = threading.Thread(target=process_document, args=(str(doc.id),), daemon=True)
+        t.start()
 
     return _doc_to_response(doc)
 
