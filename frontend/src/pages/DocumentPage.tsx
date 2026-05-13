@@ -2,6 +2,9 @@ import { useEffect, useState, useRef } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { fetchDocuments, uploadDocument, deleteDocument } from '../lib/apiClient'
 import type { Document } from '../types/api'
+import UpgradeModal from '../components/UpgradeModal'
+
+const DOC_LIMIT = 3
 
 const STATUS_MAP: Record<string, { label: string; cls: string }> = {
   uploaded:   { label: 'アップロード済', cls: 'badge-gray' },
@@ -13,6 +16,7 @@ const STATUS_MAP: Record<string, { label: string; cls: string }> = {
 export default function DocumentPage() {
   const [docs, setDocs] = useState<Document[]>([])
   const [loading, setLoading] = useState(true)
+  const [showUpgradeModal, setShowUpgradeModal] = useState(false)
   const navigate = useNavigate()
 
   useEffect(() => {
@@ -25,14 +29,26 @@ export default function DocumentPage() {
     setDocs(d => d.filter(x => x.id !== id))
   }
 
+  const atLimit = docs.length >= DOC_LIMIT
+
   return (
-    <div>
+    <>
+      {showUpgradeModal && <UpgradeModal onClose={() => setShowUpgradeModal(false)} />}
+      <div>
       <div className="page-header" style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between' }}>
         <div>
           <h1 className="page-title">ドキュメント管理</h1>
           <p className="page-desc">PDFをアップロードしてRAGの検索対象にします。</p>
         </div>
-        <button className="btn btn-primary" onClick={() => navigate('/app/documents/upload')}>＋ PDFアップロード</button>
+        <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+          <span style={{ fontSize: 12, color: atLimit ? 'var(--red)' : 'var(--gray-400)' }}>
+            {docs.length} / {DOC_LIMIT}件
+          </span>
+          <button className="btn btn-primary"
+            onClick={() => atLimit ? setShowUpgradeModal(true) : navigate('/app/documents/upload')}>
+            ＋ PDFアップロード
+          </button>
+        </div>
       </div>
 
       <div className="card" style={{ padding: 0 }}>
@@ -72,6 +88,7 @@ export default function DocumentPage() {
         )}
       </div>
     </div>
+    </>
   )
 }
 

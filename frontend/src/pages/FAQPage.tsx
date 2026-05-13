@@ -3,6 +3,9 @@ import { useNavigate, useParams } from 'react-router-dom'
 import { fetchFaqs, createFaq, updateFaq, deleteFaq, fetchBot } from '../lib/apiClient'
 import type { FAQ } from '../types/api'
 import { INDUSTRIES, FAQ_TEMPLATES, type FAQTemplate } from '../data/faqTemplates'
+import UpgradeModal from '../components/UpgradeModal'
+
+const FAQ_LIMIT = 20
 
 function TemplateModal({ industry, onClose, onAdd }: {
   industry: string
@@ -98,6 +101,7 @@ export default function FAQPage() {
   const [loading, setLoading] = useState(true)
   const [industry, setIndustry] = useState<string | null>(null)
   const [showTemplate, setShowTemplate] = useState(false)
+  const [showUpgradeModal, setShowUpgradeModal] = useState(false)
   const navigate = useNavigate()
 
   useEffect(() => {
@@ -123,6 +127,8 @@ export default function FAQPage() {
     setFaqs(f => [...f, ...created])
   }
 
+  const atLimit = faqs.length >= FAQ_LIMIT
+
   return (
     <>
       {showTemplate && industry && (
@@ -132,19 +138,27 @@ export default function FAQPage() {
           onAdd={handleAddTemplates}
         />
       )}
+      {showUpgradeModal && <UpgradeModal onClose={() => setShowUpgradeModal(false)} />}
       <div>
       <div className="page-header" style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between' }}>
         <div>
           <h1 className="page-title">FAQ管理</h1>
           <p className="page-desc">よくある質問と回答を管理します。</p>
         </div>
-        <div style={{ display: 'flex', gap: 8 }}>
+        <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+          <span style={{ fontSize: 12, color: atLimit ? 'var(--red)' : 'var(--gray-400)' }}>
+            {faqs.length} / {FAQ_LIMIT}件
+          </span>
           {industry && (
-            <button className="btn btn-secondary" onClick={() => setShowTemplate(true)}>
+            <button className="btn btn-secondary"
+              onClick={() => atLimit ? setShowUpgradeModal(true) : setShowTemplate(true)}>
               📋 テンプレートから追加
             </button>
           )}
-          <button className="btn btn-primary" onClick={() => navigate('/app/faqs/new')}>＋ 新規追加</button>
+          <button className="btn btn-primary"
+            onClick={() => atLimit ? setShowUpgradeModal(true) : navigate('/app/faqs/new')}>
+            ＋ 新規追加
+          </button>
         </div>
       </div>
 
