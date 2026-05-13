@@ -44,10 +44,6 @@ export const uploadDocument = (file: File) => {
 }
 export const deleteDocument = (id: string) => api.delete(`/documents/${id}`)
 
-// Test Chat
-export const sendTestMessage = (message: string) =>
-  api.post<ChatResponse>('/test-chat/messages', { message }).then(r => r.data)
-
 // Conversations
 export const fetchConversations = () =>
   api.get<ConversationSummary[]>('/conversations').then(r => r.data)

@@ -9,7 +9,6 @@ import DesignPage from './pages/DesignPage'
 import ContactPage from './pages/ContactPage'
 import FAQPage, { FAQFormPage } from './pages/FAQPage'
 import DocumentPage, { DocumentUploadPage } from './pages/DocumentPage'
-import TestChatPage from './pages/TestChatPage'
 import ConversationPage from './pages/ConversationPage'
 import PublicChatPage from './pages/PublicChatPage'
 import LandingPage from './pages/LandingPage'
@@ -34,7 +33,6 @@ function App() {
               <Route path="/app/faqs/:id/edit" element={<FAQFormPage />} />
               <Route path="/app/documents" element={<DocumentPage />} />
               <Route path="/app/documents/upload" element={<DocumentUploadPage />} />
-              <Route path="/app/test-chat" element={<TestChatPage />} />
               <Route path="/app/conversations" element={<ConversationPage />} />
               <Route path="/app" element={<Navigate to="/app/bot" replace />} />
             </Route>

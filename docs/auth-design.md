@@ -59,7 +59,6 @@ MVPでは **FastAPI + JWT** を採用し、**HttpOnly Secure Cookie** に保存�
 - `/api/bot`
 - `/api/faqs`
 - `/api/documents`
-- `/api/test-chat/messages`
 - `/api/conversations`
 
 認可要件:

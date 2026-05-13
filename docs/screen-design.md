@@ -186,23 +186,6 @@ URL例:
 
 ---
 
-### 3.9 テストチャット画面
-URL例:
-- `/app/test-chat`
-
-目的:
-- 公開前に応答内容やfallback表示を確認する
-
-主なUI要素:
-- チャットUI
-- 質問入力欄
-- 送信ボタン
-- 回答表示
-- citation表示
-- fallback表示
-
----
-
 ### 3.10 会話ログ一覧画面（簡易）
 URL例:
 - `/app/conversations`
@@ -277,7 +260,6 @@ URL例:
   - 文書管理へ → `/app/documents`
   - デザイン設定へ → `/app/design`
   - 問い合わせ設定へ → `/app/contact`
-  - テストチャットへ → `/app/test-chat`
   - 会話ログへ → `/app/conversations`
 
 - `/app/faqs`

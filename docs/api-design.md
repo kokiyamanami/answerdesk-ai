@@ -188,35 +188,7 @@ Response:
 
 ---
 
-## 8. テストチャットAPI
-
-### POST /api/test-chat/messages
-管理画面上でテストチャットを送信する。
-
-Request:
-```json
-{
-  "message": "送料はいくらですか？"
-}
-```
-
-Response:
-```json
-{
-  "answer": "送料は全国一律500円です。",
-  "fallback": false,
-  "citations": [
-    {
-      "chunk_id": "uuid",
-      "title": "FAQ: 配送について"
-    }
-  ]
-}
-```
-
----
-
-## 9. 会話ログAPI
+## 8. 会話ログAPI
 
 ### GET /api/conversations
 簡易会話ログ一覧を取得する。
