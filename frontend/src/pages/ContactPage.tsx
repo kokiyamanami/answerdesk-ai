@@ -109,8 +109,8 @@ export default function ContactPage() {
               <div style={{ position: 'relative', maxWidth: 360 }}
                 onClick={() => setShowUpgradeModal(true)}>
                 <input className="form-input" style={{ width: '100%', cursor: 'pointer', pointerEvents: 'none' }}
-                  type="email"
-                  value={form.fallback_contact_email || ''}
+                  type="text"
+                  value=""
                   placeholder="例: info@yourcompany.com"
                   readOnly />
                 <div style={{
