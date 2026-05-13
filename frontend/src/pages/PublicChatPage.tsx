@@ -143,7 +143,7 @@ export default function PublicChatPage() {
   const theme = bot?.theme
   const primaryColor = theme?.button_color || '#4f46e5'
   const bgColor = theme?.background_color || '#f8fafc'
-  const bubbleColor = theme?.bubble_color || '#ffffff'
+  const bubbleColor = theme?.bubble_color || '#f3f4f6'
   const textColor = theme?.text_color || '#1e293b'
 
   if (notFound) {
@@ -177,7 +177,7 @@ export default function PublicChatPage() {
         flexShrink: 0,
       }}>
         <div style={{
-          width: 36, height: 36, borderRadius: 10,
+          width: 36, height: 36, borderRadius: '50%',
           background: 'rgba(255,255,255,0.2)',
           display: 'flex', alignItems: 'center', justifyContent: 'center',
           overflow: 'hidden', flexShrink: 0,
@@ -213,10 +213,10 @@ export default function PublicChatPage() {
           }}>
             {msg.role === 'assistant' && (
               <div style={{
-                width: 30, height: 30, borderRadius: 8, flexShrink: 0,
+                width: 32, height: 32, borderRadius: '50%', flexShrink: 0,
                 background: primaryColor,
                 display: 'flex', alignItems: 'center', justifyContent: 'center',
-                overflow: 'hidden', boxShadow: '0 2px 6px rgba(0,0,0,.1)',
+                overflow: 'hidden',
               }}>
                 {bot?.icon_url
                   ? <img src={bot.icon_url} alt="bot" style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
@@ -228,12 +228,10 @@ export default function PublicChatPage() {
               maxWidth: '72%',
               background: msg.role === 'user' ? primaryColor : bubbleColor,
               color: msg.role === 'user' ? '#fff' : textColor,
-              borderRadius: msg.role === 'user' ? '18px 4px 18px 18px' : '4px 18px 18px 18px',
+              borderRadius: '18px',
               padding: '10px 16px', fontSize: 14, lineHeight: 1.65,
-              boxShadow: msg.role === 'user'
-                ? `0 2px 10px ${primaryColor}55`
-                : '0 1px 4px rgba(0,0,0,.06)',
-              border: msg.role === 'assistant' ? '1px solid rgba(0,0,0,.06)' : 'none',
+              boxShadow: 'none',
+              border: 'none',
             }}>
               <p style={{ margin: 0, whiteSpace: 'pre-wrap' }}>{msg.content}</p>
 
@@ -317,7 +315,7 @@ export default function PublicChatPage() {
         {sending && (
           <div style={{ display: 'flex', alignItems: 'flex-end', gap: 8 }}>
             <div style={{
-              width: 30, height: 30, borderRadius: 8, flexShrink: 0,
+              width: 32, height: 32, borderRadius: '50%', flexShrink: 0,
               background: primaryColor,
               display: 'flex', alignItems: 'center', justifyContent: 'center',
               overflow: 'hidden',
@@ -328,9 +326,8 @@ export default function PublicChatPage() {
               }
             </div>
             <div style={{
-              background: bubbleColor, border: '1px solid rgba(0,0,0,.06)',
-              borderRadius: '4px 18px 18px 18px',
-              boxShadow: '0 1px 4px rgba(0,0,0,.06)',
+              background: bubbleColor,
+              borderRadius: '18px',
             }}>
               <TypingIndicator color={primaryColor} />
             </div>
@@ -350,7 +347,8 @@ export default function PublicChatPage() {
       <div style={{ maxWidth: 800, margin: '0 auto', padding: '12px 16px 20px' }}>
         <div style={{
           display: 'flex', gap: 8, alignItems: 'flex-end',
-          background: '#f1f5f9', borderRadius: 16,
+          background: '#ffffff', borderRadius: 16,
+          border: '1.5px solid #e5e7eb',
           padding: '6px 6px 6px 16px',
         }}>
           <textarea
@@ -371,7 +369,7 @@ export default function PublicChatPage() {
             onClick={send}
             disabled={sending || !input.trim()}
             style={{
-              width: 40, height: 40, borderRadius: 12,
+              width: 40, height: 40, borderRadius: 20,
               background: sending || !input.trim() ? '#cbd5e1' : primaryColor,
               color: '#fff', border: 'none',
               cursor: sending || !input.trim() ? 'default' : 'pointer',

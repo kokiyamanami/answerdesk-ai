@@ -215,7 +215,7 @@ export default function DesignPage() {
               flexShrink: 0,
             }}>
               <div style={{
-                width: 30, height: 30, borderRadius: 8,
+                width: 30, height: 30, borderRadius: '50%',
                 background: 'rgba(255,255,255,0.2)',
                 display: 'flex', alignItems: 'center', justifyContent: 'center',
                 overflow: 'hidden', flexShrink: 0,
@@ -245,7 +245,7 @@ export default function DesignPage() {
               {form.welcome_message ? (
                 <div style={{ display: 'flex', alignItems: 'flex-end', gap: 6 }}>
                   <div style={{
-                    width: 24, height: 24, borderRadius: 6, flexShrink: 0,
+                    width: 26, height: 26, borderRadius: '50%', flexShrink: 0,
                     background: selectedTheme?.button_color || 'var(--brand)',
                     display: 'flex', alignItems: 'center', justifyContent: 'center',
                     overflow: 'hidden',
@@ -256,13 +256,12 @@ export default function DesignPage() {
                     }
                   </div>
                   <div style={{
-                    background: selectedTheme?.bubble_color || '#ffffff',
-                    color: selectedTheme?.text_color || '#1e293b',
-                    border: '1px solid rgba(0,0,0,.06)',
-                    borderRadius: '4px 14px 14px 14px',
+                    background: selectedTheme?.bubble_color || '#f3f4f6',
+                    color: selectedTheme?.text_color || '#111827',
+                    border: 'none',
+                    borderRadius: '18px',
                     padding: '8px 12px', fontSize: 12, lineHeight: 1.6,
                     maxWidth: '80%',
-                    boxShadow: '0 1px 3px rgba(0,0,0,.05)',
                   }}>
                     {form.welcome_message}
                   </div>
@@ -277,10 +276,9 @@ export default function DesignPage() {
                 <div style={{
                   background: selectedTheme?.button_color || 'var(--brand)',
                   color: '#fff',
-                  borderRadius: '14px 4px 14px 14px',
+                  borderRadius: '18px',
                   padding: '8px 12px', fontSize: 12, lineHeight: 1.6,
                   maxWidth: '72%',
-                  boxShadow: `0 2px 8px ${selectedTheme?.button_color || '#4f46e5'}44`,
                 }}>
                   質問があります
                 </div>
@@ -296,12 +294,13 @@ export default function DesignPage() {
             }}>
               <div style={{
                 display: 'flex', gap: 6, alignItems: 'center',
-                background: '#f1f5f9', borderRadius: 12,
+                background: '#ffffff', borderRadius: 12,
+                border: '1.5px solid #e5e7eb',
                 padding: '5px 5px 5px 12px',
               }}>
                 <span style={{ flex: 1, fontSize: 11, color: '#94a3b8' }}>メッセージを入力...</span>
                 <div style={{
-                  width: 30, height: 30, borderRadius: 9,
+                  width: 30, height: 30, borderRadius: 15,
                   background: selectedTheme?.button_color || 'var(--brand)',
                   display: 'flex', alignItems: 'center', justifyContent: 'center',
                   color: '#fff', fontSize: 14, fontWeight: 700,
