@@ -15,14 +15,19 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const [loading, setLoading] = useState(true)
 
   const load = () => {
-    setLoading(true)
     fetchMe()
       .then(setUser)
       .catch(() => setUser(null))
       .finally(() => setLoading(false))
   }
 
-  useEffect(() => { load() }, [])
+  useEffect(() => {
+    fetchMe()
+      .then(setUser)
+      .catch(() => setUser(null))
+      .finally(() => setLoading(false))
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [])
 
   return <AuthContext.Provider value={{ user, loading, refetch: load }}>{children}</AuthContext.Provider>
 }

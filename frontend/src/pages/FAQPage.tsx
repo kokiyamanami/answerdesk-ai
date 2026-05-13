@@ -6,56 +6,62 @@ import type { FAQ } from '../types/api'
 export default function FAQPage() {
   const [faqs, setFaqs] = useState<FAQ[]>([])
   const [loading, setLoading] = useState(true)
+  const navigate = useNavigate()
 
   useEffect(() => {
-    fetchFaqs()
-      .then(res => { setFaqs(res) })
-      .catch(() => {})
-      .finally(() => setLoading(false))
+    fetchFaqs().then(res => setFaqs(res)).catch(() => {}).finally(() => setLoading(false))
   }, [])
 
   const handleDelete = async (id: string) => {
-    if (!confirm('削除しますか？')) return
+    if (!confirm('このFAQを削除しますか？')) return
     await deleteFaq(id)
     setFaqs(f => f.filter(x => x.id !== id))
   }
 
-  const navigate = useNavigate()
-
   return (
     <div>
-      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 24 }}>
-        <h1 style={{ fontSize: 22 }}>FAQ管理</h1>
-        <button onClick={() => navigate('/app/faqs/new')} style={primaryBtn}>+ 新規追加</button>
+      <div className="page-header" style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between' }}>
+        <div>
+          <h1 className="page-title">FAQ管理</h1>
+          <p className="page-desc">よくある質問と回答を管理します。</p>
+        </div>
+        <button className="btn btn-primary" onClick={() => navigate('/app/faqs/new')}>＋ 新規追加</button>
       </div>
 
-      {loading ? (
-        <p style={{ color: '#64748b' }}>読み込み中...</p>
-      ) : faqs.length === 0 ? (
-        <p style={{ color: '#64748b' }}>FAQがありません。</p>
-      ) : (
-        <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: 14 }}>
-          <thead>
-            <tr style={{ background: '#f8fafc', textAlign: 'left' }}>
-              <Th>質問</Th>
-              <Th>カテゴリ</Th>
-              <Th width={120}></Th>
-            </tr>
-          </thead>
-          <tbody>
-            {faqs.map(faq => (
-              <tr key={faq.id} style={{ borderBottom: '1px solid #e2e8f0' }}>
-                <td style={td}>{faq.question}</td>
-                <td style={{ ...td, color: '#64748b' }}>{faq.category || '—'}</td>
-                <td style={{ ...td, display: 'flex', gap: 8 }}>
-                  <button onClick={() => navigate(`/app/faqs/${faq.id}/edit`)} style={outlineBtn}>編集</button>
-                  <button onClick={() => handleDelete(faq.id)} style={dangerBtn}>削除</button>
-                </td>
+      <div className="card" style={{ padding: 0 }}>
+        {loading ? (
+          <p style={{ padding: 24, color: 'var(--gray-400)' }}>読み込み中...</p>
+        ) : faqs.length === 0 ? (
+          <div style={{ padding: 48, textAlign: 'center', color: 'var(--gray-400)' }}>
+            <div style={{ fontSize: 32, marginBottom: 8 }}>💬</div>
+            <p>FAQがありません。「新規追加」から作成してください。</p>
+          </div>
+        ) : (
+          <table className="data-table">
+            <thead>
+              <tr>
+                <th>質問</th>
+                <th style={{ width: 140 }}>カテゴリ</th>
+                <th style={{ width: 100 }}></th>
               </tr>
-            ))}
-          </tbody>
-        </table>
-      )}
+            </thead>
+            <tbody>
+              {faqs.map(faq => (
+                <tr key={faq.id}>
+                  <td>{faq.question}</td>
+                  <td>{faq.category ? <span className="badge badge-indigo">{faq.category}</span> : <span style={{ color: 'var(--gray-400)' }}>—</span>}</td>
+                  <td>
+                    <div style={{ display: 'flex', gap: 6 }}>
+                      <button className="btn btn-secondary btn-sm" onClick={() => navigate(`/app/faqs/${faq.id}/edit`)}>編集</button>
+                      <button className="btn btn-danger btn-sm" onClick={() => handleDelete(faq.id)}>削除</button>
+                    </div>
+                  </td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        )}
+      </div>
     </div>
   )
 }
@@ -66,7 +72,7 @@ export function FAQFormPage() {
   const navigate = useNavigate()
   const [form, setForm] = useState({ question: '', answer: '', category: '' })
   const [saving, setSaving] = useState(false)
-  const [error, setError] = useState<string | null>(null)
+  const [alert, setAlert] = useState<{ type: 'success' | 'error'; msg: string } | null>(null)
 
   useEffect(() => {
     if (!isEdit) return
@@ -78,9 +84,9 @@ export function FAQFormPage() {
 
   const handleSave = async () => {
     if (!form.question.trim() || !form.answer.trim()) {
-      setError('質問と回答は必須です。'); return
+      setAlert({ type: 'error', msg: '質問と回答は必須です。' }); return
     }
-    setSaving(true); setError(null)
+    setSaving(true); setAlert(null)
     try {
       if (isEdit) {
         await updateFaq(id!, { question: form.question, answer: form.answer, category: form.category || null })
@@ -89,81 +95,45 @@ export function FAQFormPage() {
       }
       navigate('/app/faqs')
     } catch {
-      setError('保存に失敗しました。')
-    } finally {
-      setSaving(false)
-    }
+      setAlert({ type: 'error', msg: '保存に失敗しました。' })
+    } finally { setSaving(false) }
   }
 
   return (
-    <div style={{ maxWidth: 640 }}>
-      <h1 style={{ fontSize: 22, marginBottom: 24 }}>{isEdit ? 'FAQ編集' : 'FAQ新規作成'}</h1>
+    <div>
+      <div className="page-header">
+        <h1 className="page-title">{isEdit ? 'FAQ編集' : 'FAQ新規作成'}</h1>
+      </div>
 
-      <Field label="質問">
-        <textarea
-          rows={2}
-          value={form.question}
-          onChange={e => setForm(f => ({ ...f, question: e.target.value }))}
-          style={{ resize: 'vertical' }}
-        />
-      </Field>
+      <div className="card">
+        <div className="form-field">
+          <label className="form-label">質問 <span style={{ color: 'var(--red)' }}>*</span></label>
+          <textarea className="form-textarea" style={{ maxWidth: 640, minHeight: 72 }}
+            value={form.question} onChange={e => setForm(f => ({ ...f, question: e.target.value }))} />
+        </div>
 
-      <Field label="回答">
-        <textarea
-          rows={5}
-          value={form.answer}
-          onChange={e => setForm(f => ({ ...f, answer: e.target.value }))}
-          style={{ resize: 'vertical' }}
-        />
-      </Field>
+        <div className="form-field">
+          <label className="form-label">回答 <span style={{ color: 'var(--red)' }}>*</span></label>
+          <textarea className="form-textarea" style={{ maxWidth: 640, minHeight: 140 }}
+            value={form.answer} onChange={e => setForm(f => ({ ...f, answer: e.target.value }))} />
+        </div>
 
-      <Field label="カテゴリ（任意）">
-        <input
-          value={form.category}
-          onChange={e => setForm(f => ({ ...f, category: e.target.value }))}
-          placeholder="例: 料金, 使い方"
-        />
-      </Field>
+        <div className="form-field" style={{ marginBottom: 0 }}>
+          <label className="form-label">カテゴリ（任意）</label>
+          <input className="form-input" style={{ maxWidth: 280 }}
+            value={form.category} onChange={e => setForm(f => ({ ...f, category: e.target.value }))}
+            placeholder="例: 料金, 使い方" />
+        </div>
+      </div>
 
-      {error && <p style={{ color: 'red', marginBottom: 12 }}>{error}</p>}
+      {alert && <div className={`alert alert-${alert.type}`} style={{ marginTop: 16 }}>{alert.msg}</div>}
 
-      <div style={{ display: 'flex', gap: 12 }}>
-        <button onClick={handleSave} disabled={saving} style={primaryBtn}>
-          {saving ? '保存中...' : '保存'}
+      <div style={{ marginTop: 20, display: 'flex', gap: 10 }}>
+        <button className="btn btn-primary" onClick={handleSave} disabled={saving}>
+          {saving ? '保存中...' : '💾 保存'}
         </button>
-        <button onClick={() => navigate('/app/faqs')} style={outlineBtn}>キャンセル</button>
+        <button className="btn btn-secondary" onClick={() => navigate('/app/faqs')}>キャンセル</button>
       </div>
     </div>
   )
-}
-
-function Field({ label, children }: { label: string; children: React.ReactNode }) {
-  return (
-    <div style={{ marginBottom: 20 }}>
-      <label style={{ display: 'block', fontSize: 13, fontWeight: 600, marginBottom: 6, color: '#374151' }}>{label}</label>
-      <div style={{ display: 'flex', flexDirection: 'column', gap: 4 }}>{children}</div>
-    </div>
-  )
-}
-
-function Th({ children, width }: { children?: React.ReactNode; width?: number }) {
-  return (
-    <th style={{ padding: '10px 12px', fontWeight: 600, fontSize: 13, borderBottom: '2px solid #e2e8f0', width }}>
-      {children}
-    </th>
-  )
-}
-
-const td: React.CSSProperties = { padding: '10px 12px', verticalAlign: 'middle' }
-const primaryBtn: React.CSSProperties = {
-  padding: '8px 20px', background: '#2563eb', color: '#fff',
-  border: 'none', borderRadius: 6, cursor: 'pointer', fontSize: 14,
-}
-const outlineBtn: React.CSSProperties = {
-  padding: '6px 14px', background: '#fff', color: '#374151',
-  border: '1px solid #e2e8f0', borderRadius: 6, cursor: 'pointer', fontSize: 13,
-}
-const dangerBtn: React.CSSProperties = {
-  padding: '6px 14px', background: '#fff', color: '#dc2626',
-  border: '1px solid #fecaca', borderRadius: 6, cursor: 'pointer', fontSize: 13,
 }

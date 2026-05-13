@@ -3,6 +3,7 @@
 ## ローカル開発環境の起動手順
 
 ### 前提
+
 - Docker / Docker Compose がインストール済みであること
 
 ### 1. 環境変数の準備
@@ -31,6 +32,7 @@ docker compose exec backend python -m seeds.seed
 ```
 
 デフォルトの管理者アカウント:
+
 - Email: `admin@example.com`
 - Password: `changeme1234`
 
@@ -38,10 +40,10 @@ docker compose exec backend python -m seeds.seed
 
 ### 5. アクセス
 
-| サービス | URL |
-|---|---|
-| フロントエンド | http://localhost:5173 |
-| バックエンド API | http://localhost:8000 |
+| サービス         | URL                        |
+| ---------------- | -------------------------- |
+| フロントエンド   | http://localhost:5173      |
+| バックエンド API | http://localhost:8000      |
 | API ドキュメント | http://localhost:8000/docs |
 
 ---
@@ -115,4 +117,3 @@ docker compose down -v && docker compose up -d
 - [エラーUX設計](docs/error-ux-design.md)
 - [テスト方針](docs/test-strategy.md)
 - [実装タスク分解](docs/implementation-tasks.md)
-

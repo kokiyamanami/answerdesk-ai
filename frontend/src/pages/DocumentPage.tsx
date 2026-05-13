@@ -3,17 +3,11 @@ import { useNavigate } from 'react-router-dom'
 import { fetchDocuments, uploadDocument, deleteDocument } from '../lib/apiClient'
 import type { Document } from '../types/api'
 
-const STATUS_LABEL: Record<string, string> = {
-  uploaded: 'アップロード済',
-  processing: '処理中',
-  processed: '完了',
-  failed: 'エラー',
-}
-const STATUS_COLOR: Record<string, string> = {
-  uploaded: '#64748b',
-  processing: '#d97706',
-  processed: '#16a34a',
-  failed: '#dc2626',
+const STATUS_MAP: Record<string, { label: string; cls: string }> = {
+  uploaded:   { label: 'アップロード済', cls: 'badge-gray' },
+  processing: { label: '処理中',         cls: 'badge-amber' },
+  processed:  { label: '完了',           cls: 'badge-green' },
+  failed:     { label: 'エラー',         cls: 'badge-red' },
 }
 
 export default function DocumentPage() {
@@ -22,64 +16,61 @@ export default function DocumentPage() {
   const navigate = useNavigate()
 
   useEffect(() => {
-    fetchDocuments()
-      .then(res => setDocs(res))
-      .catch(() => {})
-      .finally(() => setLoading(false))
+    fetchDocuments().then(res => setDocs(res)).catch(() => {}).finally(() => setLoading(false))
   }, [])
 
   const handleDelete = async (id: string) => {
-    if (!confirm('削除しますか？')) return
+    if (!confirm('このドキュメントを削除しますか？')) return
     await deleteDocument(id)
     setDocs(d => d.filter(x => x.id !== id))
   }
 
   return (
     <div>
-      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 24 }}>
-        <h1 style={{ fontSize: 22 }}>ドキュメント管理</h1>
-        <button onClick={() => navigate('/app/documents/upload')} style={primaryBtn}>+ PDFアップロード</button>
+      <div className="page-header" style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between' }}>
+        <div>
+          <h1 className="page-title">ドキュメント管理</h1>
+          <p className="page-desc">PDFをアップロードしてRAGの検索対象にします。</p>
+        </div>
+        <button className="btn btn-primary" onClick={() => navigate('/app/documents/upload')}>＋ PDFアップロード</button>
       </div>
 
-      {loading ? (
-        <p style={{ color: '#64748b' }}>読み込み中...</p>
-      ) : docs.length === 0 ? (
-        <p style={{ color: '#64748b' }}>ドキュメントがありません。</p>
-      ) : (
-        <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: 14 }}>
-          <thead>
-            <tr style={{ background: '#f8fafc', textAlign: 'left' }}>
-              <Th>ファイル名</Th>
-              <Th>ステータス</Th>
-              <Th>チャンク数</Th>
-              <Th>アップロード日</Th>
-              <Th width={80}></Th>
-            </tr>
-          </thead>
-          <tbody>
-            {docs.map(doc => (
-              <tr key={doc.id} style={{ borderBottom: '1px solid #e2e8f0' }}>
-                <td style={td}>{doc.file_name}</td>
-                <td style={td}>
-                  <span style={{
-                    color: STATUS_COLOR[doc.status] || '#64748b',
-                    fontWeight: 500,
-                  }}>
-                    {STATUS_LABEL[doc.status] || doc.status}
-                  </span>
-                </td>
-                <td style={{ ...td, color: '#64748b' }}>{doc.chunk_count ?? '—'}</td>
-                <td style={{ ...td, color: '#64748b' }}>
-                  {new Date(doc.created_at).toLocaleDateString('ja-JP')}
-                </td>
-                <td style={td}>
-                  <button onClick={() => handleDelete(doc.id)} style={dangerBtn}>削除</button>
-                </td>
+      <div className="card" style={{ padding: 0 }}>
+        {loading ? (
+          <p style={{ padding: 24, color: 'var(--gray-400)' }}>読み込み中...</p>
+        ) : docs.length === 0 ? (
+          <div style={{ padding: 48, textAlign: 'center', color: 'var(--gray-400)' }}>
+            <div style={{ fontSize: 32, marginBottom: 8 }}>📄</div>
+            <p>ドキュメントがありません。PDFをアップロードしてください。</p>
+          </div>
+        ) : (
+          <table className="data-table">
+            <thead>
+              <tr>
+                <th>ファイル名</th>
+                <th style={{ width: 130 }}>ステータス</th>
+                <th style={{ width: 90 }}>チャンク数</th>
+                <th style={{ width: 120 }}>アップロード日</th>
+                <th style={{ width: 80 }}></th>
               </tr>
-            ))}
-          </tbody>
-        </table>
-      )}
+            </thead>
+            <tbody>
+              {docs.map(doc => {
+                const s = STATUS_MAP[doc.status] ?? { label: doc.status, cls: 'badge-gray' }
+                return (
+                  <tr key={doc.id}>
+                    <td style={{ fontWeight: 500 }}>📄 {doc.file_name}</td>
+                    <td><span className={`badge ${s.cls}`}>{s.label}</span></td>
+                    <td style={{ color: 'var(--gray-500)' }}>{doc.chunk_count ?? '—'}</td>
+                    <td style={{ color: 'var(--gray-500)' }}>{new Date(doc.created_at).toLocaleDateString('ja-JP')}</td>
+                    <td><button className="btn btn-danger btn-sm" onClick={() => handleDelete(doc.id)}>削除</button></td>
+                  </tr>
+                )
+              })}
+            </tbody>
+          </table>
+        )}
+      </div>
     </div>
   )
 }
@@ -88,90 +79,65 @@ export function DocumentUploadPage() {
   const navigate = useNavigate()
   const [file, setFile] = useState<File | null>(null)
   const [uploading, setUploading] = useState(false)
-  const [error, setError] = useState<string | null>(null)
+  const [alert, setAlert] = useState<{ type: 'success' | 'error'; msg: string } | null>(null)
   const inputRef = useRef<HTMLInputElement>(null)
 
   const handleUpload = async () => {
-    if (!file) { setError('ファイルを選択してください。'); return }
-    if (!file.name.toLowerCase().endsWith('.pdf')) { setError('PDFファイルのみ対応しています。'); return }
-    setUploading(true); setError(null)
+    if (!file) { setAlert({ type: 'error', msg: 'ファイルを選択してください。' }); return }
+    if (!file.name.toLowerCase().endsWith('.pdf')) { setAlert({ type: 'error', msg: 'PDFファイルのみ対応しています。' }); return }
+    setUploading(true); setAlert(null)
     try {
       await uploadDocument(file)
       navigate('/app/documents')
     } catch {
-      setError('アップロードに失敗しました。')
-    } finally {
-      setUploading(false)
-    }
+      setAlert({ type: 'error', msg: 'アップロードに失敗しました。' })
+    } finally { setUploading(false) }
   }
 
   return (
-    <div style={{ maxWidth: 480 }}>
-      <h1 style={{ fontSize: 22, marginBottom: 24 }}>PDFアップロード</h1>
-      <p style={{ fontSize: 13, color: '#64748b', marginBottom: 20 }}>
-        PDFファイルをアップロードすると、バックグラウンドで処理されRAGの検索対象になります。
-      </p>
-
-      <div
-        onClick={() => inputRef.current?.click()}
-        style={{
-          border: '2px dashed #cbd5e1', borderRadius: 8, padding: 40,
-          textAlign: 'center', cursor: 'pointer', marginBottom: 20,
-          background: file ? '#f0fdf4' : '#f8fafc',
-        }}
-      >
-        <input
-          ref={inputRef}
-          type="file"
-          accept=".pdf"
-          style={{ display: 'none' }}
-          onChange={e => { setFile(e.target.files?.[0] ?? null); setError(null) }}
-        />
-        {file ? (
-          <div>
-            <div style={{ fontSize: 32, marginBottom: 8 }}>📄</div>
-            <p style={{ fontWeight: 600 }}>{file.name}</p>
-            <p style={{ fontSize: 12, color: '#64748b' }}>{(file.size / 1024).toFixed(0)} KB</p>
-          </div>
-        ) : (
-          <div>
-            <div style={{ fontSize: 32, marginBottom: 8 }}>📁</div>
-            <p>クリックしてPDFを選択</p>
-            <p style={{ fontSize: 12, color: '#64748b' }}>最大 10MB</p>
-          </div>
-        )}
+    <div>
+      <div className="page-header">
+        <h1 className="page-title">PDFアップロード</h1>
+        <p className="page-desc">アップロード後、バックグラウンドで処理されます（数分かかる場合があります）。</p>
       </div>
 
-      {error && <p style={{ color: 'red', marginBottom: 12 }}>{error}</p>}
+      <div className="card" style={{ maxWidth: 520 }}>
+        <div
+          onClick={() => inputRef.current?.click()}
+          style={{
+            border: `2px dashed ${file ? 'var(--brand)' : 'var(--gray-200)'}`,
+            borderRadius: 10, padding: '40px 24px',
+            textAlign: 'center', cursor: 'pointer',
+            background: file ? 'var(--brand-light)' : 'var(--gray-50)',
+            transition: 'all 0.15s',
+          }}
+        >
+          <input ref={inputRef} type="file" accept=".pdf" style={{ display: 'none' }}
+            onChange={e => { setFile(e.target.files?.[0] ?? null); setAlert(null) }} />
+          {file ? (
+            <>
+              <div style={{ fontSize: 40, marginBottom: 8 }}>📄</div>
+              <p style={{ fontWeight: 600, margin: 0, color: 'var(--brand-dark)' }}>{file.name}</p>
+              <p style={{ fontSize: 12, color: 'var(--gray-500)', margin: '4px 0 0' }}>{(file.size / 1024).toFixed(0)} KB</p>
+            </>
+          ) : (
+            <>
+              <div style={{ fontSize: 40, marginBottom: 8 }}>📁</div>
+              <p style={{ fontWeight: 600, margin: 0 }}>クリックしてPDFを選択</p>
+              <p style={{ fontSize: 12, color: 'var(--gray-400)', margin: '4px 0 0' }}>最大 10MB · PDFのみ対応</p>
+            </>
+          )}
+        </div>
 
-      <div style={{ display: 'flex', gap: 12 }}>
-        <button onClick={handleUpload} disabled={uploading} style={primaryBtn}>
-          {uploading ? 'アップロード中...' : 'アップロード'}
-        </button>
-        <button onClick={() => navigate('/app/documents')} style={outlineBtn}>キャンセル</button>
+        {alert && <div className={`alert alert-${alert.type}`} style={{ marginTop: 16 }}>{alert.msg}</div>}
+
+        <div style={{ marginTop: 20, display: 'flex', gap: 10 }}>
+          <button className="btn btn-primary" onClick={handleUpload} disabled={uploading}>
+            {uploading ? 'アップロード中...' : '⬆ アップロード'}
+          </button>
+          <button className="btn btn-secondary" onClick={() => navigate('/app/documents')}>キャンセル</button>
+        </div>
       </div>
     </div>
   )
-}
-
-function Th({ children, width }: { children?: React.ReactNode; width?: number }) {
-  return (
-    <th style={{ padding: '10px 12px', fontWeight: 600, fontSize: 13, borderBottom: '2px solid #e2e8f0', width }}>
-      {children}
-    </th>
-  )
-}
-
-const td: React.CSSProperties = { padding: '10px 12px', verticalAlign: 'middle' }
-const primaryBtn: React.CSSProperties = {
-  padding: '8px 20px', background: '#2563eb', color: '#fff',
-  border: 'none', borderRadius: 6, cursor: 'pointer', fontSize: 14,
-}
-const outlineBtn: React.CSSProperties = {
-  padding: '8px 18px', background: '#fff', color: '#374151',
-  border: '1px solid #e2e8f0', borderRadius: 6, cursor: 'pointer', fontSize: 14,
-}
-const dangerBtn: React.CSSProperties = {
-  padding: '6px 14px', background: '#fff', color: '#dc2626',
-  border: '1px solid #fecaca', borderRadius: 6, cursor: 'pointer', fontSize: 13,
 }

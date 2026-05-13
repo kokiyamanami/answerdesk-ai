@@ -1,5 +1,6 @@
 import { useState } from 'react'
 import api from '../lib/api'
+import '../admin.css'
 
 export default function LoginPage() {
   const [email, setEmail] = useState('')
@@ -15,41 +16,85 @@ export default function LoginPage() {
       await api.post('/auth/login', { email, password })
       window.location.href = '/app/bot'
     } catch {
-      setError('ログインに失敗しました。')
+      setError('メールアドレスまたはパスワードが正しくありません。')
     } finally {
       setLoading(false)
     }
   }
 
   return (
-    <div style={{ maxWidth: 400, margin: '80px auto', padding: '0 16px' }}>
-      <h1 style={{ fontSize: 24, marginBottom: 24 }}>AnswerDesk AI</h1>
-      <form onSubmit={handleSubmit}>
-        <div style={{ marginBottom: 16 }}>
-          <label>メールアドレス</label>
-          <input
-            type="email"
-            value={email}
-            onChange={(e) => setEmail(e.target.value)}
-            required
-            style={{ display: 'block', width: '100%', padding: '8px', marginTop: 4 }}
-          />
+    <div style={{
+      minHeight: '100vh',
+      background: 'var(--gray-50)',
+      display: 'flex',
+      alignItems: 'center',
+      justifyContent: 'center',
+      padding: '0 16px',
+    }}>
+      <div style={{ width: '100%', maxWidth: 400 }}>
+        {/* Logo */}
+        <div style={{ textAlign: 'center', marginBottom: 32 }}>
+          <div style={{
+            width: 44, height: 44,
+            background: 'var(--brand)',
+            borderRadius: 12,
+            display: 'inline-flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            fontSize: 22,
+            marginBottom: 14,
+            boxShadow: '0 4px 14px rgba(99,102,241,0.35)',
+          }}>✦</div>
+          <h1 style={{ fontSize: 20, fontWeight: 700, color: 'var(--gray-900)', margin: 0, letterSpacing: '-0.3px' }}>
+            AnswerDesk AI
+          </h1>
+          <p style={{ fontSize: 13, color: 'var(--gray-500)', marginTop: 6 }}>管理画面にログイン</p>
         </div>
-        <div style={{ marginBottom: 16 }}>
-          <label>パスワード</label>
-          <input
-            type="password"
-            value={password}
-            onChange={(e) => setPassword(e.target.value)}
-            required
-            style={{ display: 'block', width: '100%', padding: '8px', marginTop: 4 }}
-          />
+
+        {/* Card */}
+        <div className="card">
+          <form onSubmit={handleSubmit}>
+            <div className="form-field">
+              <label className="form-label">メールアドレス</label>
+              <input
+                className="form-input"
+                type="email"
+                value={email}
+                onChange={e => setEmail(e.target.value)}
+                placeholder="admin@example.com"
+                required
+                autoComplete="email"
+              />
+            </div>
+            <div className="form-field" style={{ marginBottom: 0 }}>
+              <label className="form-label">パスワード</label>
+              <input
+                className="form-input"
+                type="password"
+                value={password}
+                onChange={e => setPassword(e.target.value)}
+                placeholder="••••••••"
+                required
+                autoComplete="current-password"
+              />
+            </div>
+
+            {error && (
+              <div className="alert alert-error" style={{ marginTop: 16 }}>{error}</div>
+            )}
+
+            <button
+              type="submit"
+              className="btn btn-primary"
+              disabled={loading}
+              style={{ width: '100%', marginTop: 24, justifyContent: 'center' }}
+            >
+              {loading ? 'ログイン中...' : 'ログイン'}
+            </button>
+          </form>
         </div>
-        {error && <p style={{ color: 'red', marginBottom: 12 }}>{error}</p>}
-        <button type="submit" disabled={loading} style={{ width: '100%', padding: '10px' }}>
-          {loading ? 'ログイン中...' : 'ログイン'}
-        </button>
-      </form>
+      </div>
     </div>
   )
 }
+
