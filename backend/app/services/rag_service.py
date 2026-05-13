@@ -60,11 +60,12 @@ def answer_question(
     context = _build_context(chunks)
 
     # 5. LLM で未ヒット判定
-    if _is_fallback_by_llm(context=context, question=question):
+    model = bot.ai_model or settings.openai_chat_model
+    if _is_fallback_by_llm(context=context, question=question, model=model):
         return _make_fallback(bot)
 
     # 6. 回答生成
-    answer = _generate_answer(context=context, question=question)
+    answer = _generate_answer(context=context, question=question, model=model)
 
     return {
         "answer": answer,
@@ -106,11 +107,11 @@ def _build_context(chunks: list[dict]) -> str:
     return "\n\n".join(parts)
 
 
-def _is_fallback_by_llm(context: str, question: str) -> bool:
+def _is_fallback_by_llm(context: str, question: str, model: str) -> bool:
     client = OpenAI(api_key=settings.openai_api_key, timeout=settings.openai_request_timeout_seconds)
     prompt = FALLBACK_JUDGMENT_PROMPT.format(context=context, question=question)
     response = client.chat.completions.create(
-        model=settings.openai_chat_model,
+        model=model,
         messages=[{"role": "user", "content": prompt}],
         max_tokens=5,
         temperature=0,
@@ -119,11 +120,11 @@ def _is_fallback_by_llm(context: str, question: str) -> bool:
     return answer != "YES"
 
 
-def _generate_answer(context: str, question: str) -> str:
+def _generate_answer(context: str, question: str, model: str) -> str:
     client = OpenAI(api_key=settings.openai_api_key, timeout=settings.openai_request_timeout_seconds)
     system = SYSTEM_PROMPT.format(context=context)
     response = client.chat.completions.create(
-        model=settings.openai_chat_model,
+        model=model,
         messages=[
             {"role": "system", "content": system},
             {"role": "user", "content": question},

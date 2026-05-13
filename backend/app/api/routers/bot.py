@@ -36,6 +36,7 @@ class BotResponse(BaseModel):
     fallback_contact_email: Optional[str]
     status: str
     rag_score_threshold: float
+    ai_model: str
 
     model_config = {"from_attributes": True}
 
@@ -64,6 +65,7 @@ class BotUpdateRequest(BaseModel):
     fallback_contact_url: Optional[str] = None
     fallback_contact_email: Optional[str] = None
     rag_score_threshold: Optional[float] = None
+    ai_model: Optional[str] = None
 
     @field_validator("public_slug")
     @classmethod
@@ -93,6 +95,7 @@ def _bot_to_response(bot: Bot) -> BotResponse:
         fallback_contact_email=bot.fallback_contact_email,
         status=bot.status,
         rag_score_threshold=bot.rag_score_threshold if bot.rag_score_threshold is not None else 0.5,
+        ai_model=bot.ai_model or "gpt-4.1-mini",
     )
 
 

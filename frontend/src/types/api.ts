@@ -20,6 +20,7 @@ export interface Bot {
   fallback_contact_email: string | null
   status: string
   rag_score_threshold: number
+  ai_model: string
 }
 
 export interface ThemePreset {
