@@ -163,7 +163,7 @@ export default function PublicChatPage() {
   return (
     <div style={{
       display: 'flex', flexDirection: 'column', height: '100dvh',
-      maxWidth: 680, margin: '0 auto',
+      width: '100%',
       fontFamily: "'Hiragino Sans','Noto Sans JP',system-ui,sans-serif",
       background: bgColor,
     }}>
