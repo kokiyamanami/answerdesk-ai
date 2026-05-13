@@ -114,6 +114,45 @@ export default function BotPage() {
         </div>
       </div>
 
+      {/* AI感度設定 */}
+      <div className="card" style={{ marginTop: 24 }}>
+        <h2 style={{ fontSize: 15, fontWeight: 700, marginBottom: 4, color: 'var(--gray-800)' }}>AI 応答感度</h2>
+        <p style={{ fontSize: 13, color: 'var(--gray-500)', marginBottom: 20 }}>
+          質問とナレッジの一致度がこの値を下回った場合、AIは「回答できない」と判断してフォールバックします。
+        </p>
+        <div className="form-field" style={{ marginBottom: 0 }}>
+          <label className="form-label">
+            ヒット強度
+            <span style={{
+              marginLeft: 10, fontSize: 15, fontWeight: 700,
+              color: 'var(--brand)',
+            }}>
+              {((form.rag_score_threshold ?? 0.5) * 100).toFixed(0)}%
+            </span>
+          </label>
+          <div style={{ display: 'flex', alignItems: 'center', gap: 12, marginTop: 8 }}>
+            <span style={{ fontSize: 12, color: 'var(--gray-400)', whiteSpace: 'nowrap' }}>広く拾う</span>
+            <input
+              type="range"
+              min={0.1}
+              max={0.95}
+              step={0.05}
+              value={form.rag_score_threshold ?? 0.5}
+              onChange={e => setForm(f => ({ ...f, rag_score_threshold: parseFloat(e.target.value) }))}
+              style={{ flex: 1 }}
+            />
+            <span style={{ fontSize: 12, color: 'var(--gray-400)', whiteSpace: 'nowrap' }}>厳密に一致</span>
+          </div>
+          <span className="form-hint" style={{ marginTop: 8 }}>
+            {(form.rag_score_threshold ?? 0.5) < 0.35
+              ? '⚠️ 低すぎると無関係な情報でも回答してしまう可能性があります。'
+              : (form.rag_score_threshold ?? 0.5) > 0.75
+              ? '⚠️ 高すぎると質問が少しずれただけでフォールバックしやすくなります。'
+              : '✅ 推奨範囲内です。（目安: 35〜75%）'}
+          </span>
+        </div>
+      </div>
+
       {alert && <div className={`alert alert-${alert.type}`} style={{ marginTop: 16 }}>{alert.msg}</div>}
 
       <div style={{ marginTop: 20 }}>

@@ -52,7 +52,8 @@ def answer_question(
     chunks = _vector_search(bot_id=bot.id, embedding=q_embedding, db=db)
 
     # 3. 未ヒット判定（スコア閾値）
-    if not chunks or chunks[0]["score"] < settings.rag_score_threshold:
+    threshold = bot.rag_score_threshold if bot.rag_score_threshold is not None else settings.rag_score_threshold
+    if not chunks or chunks[0]["score"] < threshold:
         return _make_fallback(bot)
 
     # 4. コンテキスト組み立て

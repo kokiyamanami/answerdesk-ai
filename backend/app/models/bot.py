@@ -23,6 +23,7 @@ class Bot(Base):
     fallback_message = Column(Text, nullable=False, default="申し訳ありませんが、お答えできませんでした。お問い合わせください。")
     fallback_contact_url = Column(Text, nullable=True)
     fallback_contact_email = Column(String(255), nullable=True)
+    rag_score_threshold = Column("rag_score_threshold", __import__('sqlalchemy').Float, nullable=False, default=0.5)
     status = Column(String(50), nullable=False, default="active")
     created_at = Column(DateTime, nullable=False, default=func.now())
     updated_at = Column(DateTime, nullable=False, default=func.now(), onupdate=func.now())
