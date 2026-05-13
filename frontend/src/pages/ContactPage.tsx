@@ -2,12 +2,14 @@ import { useEffect, useState } from 'react'
 import { fetchBot, fetchThemes, updateBot } from '../lib/apiClient'
 import type { Bot, ThemePreset } from '../types/api'
 import { FORM_FIELD_DEFS, mergeFormFields, type FormFieldConfig } from '../data/formFields'
+import UpgradeModal from '../components/UpgradeModal'
 
 export default function ContactPage() {
   const [bot, setBot] = useState<Bot | null>(null)
   const [themes, setThemes] = useState<ThemePreset[]>([])
   const [form, setForm] = useState<Partial<Bot>>({})
   const [formFields, setFormFields] = useState<FormFieldConfig[]>(mergeFormFields(null))
+  const [showUpgradeModal, setShowUpgradeModal] = useState(false)
   const [saving, setSaving] = useState(false)
   const [alert, setAlert] = useState<{ type: 'success' | 'error'; msg: string } | null>(null)
 
@@ -48,6 +50,8 @@ export default function ContactPage() {
   const enabledFields = formFields.filter(f => f.enabled)
 
   return (
+    <>
+      {showUpgradeModal && <UpgradeModal onClose={() => setShowUpgradeModal(false)} />}
     <div>
       <div className="page-header">
         <h1 className="page-title">問い合わせ設定</h1>
@@ -85,21 +89,38 @@ export default function ContactPage() {
             </div>
 
             <div className="form-field">
-              <label className="form-label">お問い合わせURL</label>
+              <label className="form-label">外部問い合わせページURL</label>
               <input className="form-input" style={{ maxWidth: 480 }} type="url"
                 value={form.fallback_contact_url || ''}
                 onChange={e => setForm(f => ({ ...f, fallback_contact_url: e.target.value }))}
                 placeholder="https://example.com/contact"
                 disabled={!form.fallback_enabled} />
+              <span className="form-hint">フォールバック時にチャット内へ「お問い合わせはこちら →」のリンクとして表示されます。</span>
             </div>
 
             <div className="form-field" style={{ marginBottom: 0 }}>
-              <label className="form-label">お問い合わせメールアドレス</label>
-              <input className="form-input" style={{ maxWidth: 360 }} type="email"
-                value={form.fallback_contact_email || ''}
-                onChange={e => setForm(f => ({ ...f, fallback_contact_email: e.target.value }))}
-                placeholder="support@example.com"
-                disabled={!form.fallback_enabled} />
+              <label className="form-label" style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+                フォーム通知メールアドレス
+                <span style={{
+                  fontSize: 10, fontWeight: 700, color: 'var(--gray-400)',
+                  background: 'var(--gray-100)', borderRadius: 4, padding: '2px 6px',
+                }}>🔒 有料プラン</span>
+              </label>
+              <div style={{ position: 'relative', maxWidth: 360 }}
+                onClick={() => setShowUpgradeModal(true)}>
+                <input className="form-input" style={{ width: '100%', cursor: 'pointer', pointerEvents: 'none' }}
+                  type="email"
+                  value={form.fallback_contact_email || ''}
+                  placeholder="support@example.com"
+                  readOnly />
+                <div style={{
+                  position: 'absolute', inset: 0, borderRadius: 8,
+                  background: 'rgba(248,250,252,0.6)', cursor: 'pointer',
+                }} />
+              </div>
+              <span className="form-hint">
+                ユーザーがフォームを送信した際に、このアドレスへ通知メールが届きます。有料プランにアップグレードすると利用できます。
+              </span>
             </div>
           </div>
 
@@ -297,5 +318,6 @@ export default function ContactPage() {
         </div>
       </div>
     </div>
+    </>
   )
 }
