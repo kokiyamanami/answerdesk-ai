@@ -1,12 +1,11 @@
 import { useEffect, useState, useRef } from 'react'
-import { fetchBot, createBot, updateBot, checkSlug, fetchThemes } from '../lib/apiClient'
-import type { Bot, ThemePreset } from '../types/api'
+import { fetchBot, createBot, updateBot, checkSlug } from '../lib/apiClient'
+import type { Bot } from '../types/api'
 
 const BASE_URL = window.location.origin + '/c/'
 
 export default function BotPage() {
   const [bot, setBot] = useState<Bot | null>(null)
-  const [themes, setThemes] = useState<ThemePreset[]>([])
   const [form, setForm] = useState<Partial<Bot>>({})
   const [slugStatus, setSlugStatus] = useState<'ok' | 'taken' | null>(null)
   const [saving, setSaving] = useState(false)
@@ -14,8 +13,7 @@ export default function BotPage() {
   const slugTimer = useRef<ReturnType<typeof setTimeout> | null>(null)
 
   useEffect(() => {
-    Promise.all([fetchBot().catch(() => null), fetchThemes()]).then(([b, t]) => {
-      setThemes(t)
+    fetchBot().catch(() => null).then(b => {
       if (b) { setBot(b); setForm(b) }
     })
   }, [])
@@ -74,16 +72,6 @@ export default function BotPage() {
           <input className="form-input" style={{ maxWidth: 400 }}
             value={form.chat_title || ''} onChange={e => setForm(f => ({ ...f, chat_title: e.target.value }))} />
           <span className="form-hint">チャット画面上部に表示されるタイトルです。</span>
-        </div>
-
-        <div className="form-field">
-          <label className="form-label">テーマ</label>
-          <select className="form-select" style={{ maxWidth: 300 }}
-            value={form.theme_preset_id || ''}
-            onChange={e => setForm(f => ({ ...f, theme_preset_id: e.target.value || null }))}>
-            <option value="">未選択</option>
-            {themes.map(t => <option key={t.id} value={t.id}>{t.name}</option>)}
-          </select>
         </div>
 
         <hr className="divider" />

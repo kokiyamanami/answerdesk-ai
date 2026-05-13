@@ -1,6 +1,8 @@
+import os
 from fastapi import FastAPI, Request
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import JSONResponse
+from fastapi.staticfiles import StaticFiles
 
 from app.api.router import api_router
 from app.core.config import settings
@@ -19,6 +21,12 @@ app.add_middleware(
     allow_methods=["*"],
     allow_headers=["*"],
 )
+
+# dev環境のみローカルストレージを公開
+if settings.app_env != "prod":
+    _static_dir = "/tmp/answerdesk_uploads"
+    os.makedirs(_static_dir, exist_ok=True)
+    app.mount("/uploads", StaticFiles(directory=_static_dir), name="uploads")
 
 
 @app.exception_handler(Exception)

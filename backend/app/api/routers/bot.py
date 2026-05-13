@@ -1,15 +1,21 @@
+import os
 import re
 import uuid
 
-from fastapi import APIRouter, Depends, HTTPException, Query, status
+import boto3
+from fastapi import APIRouter, Depends, File, HTTPException, Query, UploadFile, status
 from pydantic import BaseModel, field_validator
 from sqlalchemy.orm import Session
 from typing import Optional
 
 from app.api.deps import get_current_user
+from app.core.config import settings
 from app.db.session import get_db
 from app.models.bot import Bot
 from app.models.user import User
+
+ALLOWED_IMAGE_TYPES = {"image/jpeg", "image/png", "image/gif", "image/webp", "image/svg+xml"}
+MAX_ICON_BYTES = 2 * 1024 * 1024  # 2MB
 
 router = APIRouter(prefix="/bot", tags=["bot"])
 
@@ -159,3 +165,54 @@ def check_slug(
         return SlugCheckResponse(value=value, available=True)
     exists = db.query(Bot).filter(Bot.public_slug == value).first()
     return SlugCheckResponse(value=value, available=not bool(exists))
+
+
+@router.post("/icon", response_model=BotResponse)
+async def upload_icon(
+    file: UploadFile = File(...),
+    current_user: User = Depends(get_current_user),
+    db: Session = Depends(get_db),
+):
+    bot = db.query(Bot).filter(Bot.user_id == current_user.id).first()
+    if not bot:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND,
+                            detail={"code": "bot_not_found", "message": "ボットが見つかりません。"})
+
+    if file.content_type not in ALLOWED_IMAGE_TYPES:
+        raise HTTPException(status_code=status.HTTP_422_UNPROCESSABLE_ENTITY,
+                            detail={"code": "invalid_file_type", "message": "JPEG / PNG / GIF / WebP / SVG のみアップロードできます。"})
+
+    contents = await file.read()
+    if len(contents) > MAX_ICON_BYTES:
+        raise HTTPException(status_code=status.HTTP_422_UNPROCESSABLE_ENTITY,
+                            detail={"code": "file_too_large", "message": "アイコン画像は2MB以内にしてください。"})
+
+    ext = (file.filename or "icon").rsplit(".", 1)[-1].lower()
+    file_name = f"{uuid.uuid4().hex}.{ext}"
+
+    if settings.app_env != "prod":
+        # dev: /tmp/answerdesk_uploads/icons/ に保存
+        save_dir = f"/tmp/answerdesk_uploads/icons"
+        os.makedirs(save_dir, exist_ok=True)
+        with open(f"{save_dir}/{file_name}", "wb") as f:
+            f.write(contents)
+        public_url = f"/uploads/icons/{file_name}"
+    else:
+        s3_key = f"icons/{bot.id}/{file_name}"
+        public_url = f"https://{settings.s3_bucket_name}.s3.{settings.aws_region}.amazonaws.com/{s3_key}"
+        try:
+            s3 = boto3.client("s3", region_name=settings.aws_region)
+            s3.put_object(
+                Bucket=settings.s3_bucket_name,
+                Key=s3_key,
+                Body=contents,
+                ContentType=file.content_type,
+            )
+        except Exception:
+            raise HTTPException(status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+                                detail={"code": "upload_failed", "message": "アイコンのアップロードに失敗しました。"})
+
+    bot.icon_url = public_url
+    db.commit()
+    db.refresh(bot)
+    return _bot_to_response(bot)

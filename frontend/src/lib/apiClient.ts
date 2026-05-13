@@ -14,6 +14,13 @@ export const createBot = (data: { name: string; chat_title: string; public_slug:
 export const updateBot = (data: Partial<Bot>) => api.patch<Bot>('/bot', data).then(r => r.data)
 export const checkSlug = (value: string) =>
   api.get<{ value: string; available: boolean }>(`/bot/slug/check?value=${value}`).then(r => r.data)
+export const uploadBotIcon = (file: File) => {
+  const form = new FormData()
+  form.append('file', file)
+  return api.post<Bot>('/bot/icon', form, {
+    headers: { 'Content-Type': 'multipart/form-data' },
+  }).then(r => r.data)
+}
 
 // Theme
 export const fetchThemes = () => api.get<ThemePreset[]>('/theme-presets').then(r => r.data)
