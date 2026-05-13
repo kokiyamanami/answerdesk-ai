@@ -10,6 +10,7 @@ import type { ChatResponse } from '../types/api'
 interface BotInfo {
   name: string
   chat_title: string
+  icon_url: string | null
   welcome_message: string | null
   theme: {
     background_color: string
@@ -107,7 +108,11 @@ export default function PublicChatPage() {
       maxWidth: 640, margin: '0 auto',
     }}>
       {/* Header */}
-      <div style={{ background: primaryColor, color: '#fff', padding: '16px 20px', fontWeight: 600, fontSize: 16 }}>
+      <div style={{ background: primaryColor, color: '#fff', padding: '12px 20px', fontWeight: 600, fontSize: 16, display: 'flex', alignItems: 'center', gap: 10 }}>
+        {bot?.icon_url
+          ? <img src={bot.icon_url} alt="icon" style={{ width: 32, height: 32, borderRadius: 8, objectFit: 'cover', flexShrink: 0 }} />
+          : <span style={{ fontSize: 20, flexShrink: 0 }}>💬</span>
+        }
         {bot?.chat_title || bot?.name || ''}
       </div>
 
