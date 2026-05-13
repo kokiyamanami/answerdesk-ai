@@ -8,7 +8,6 @@ export interface User {
 
 export interface Bot {
   id: string
-  name: string
   public_slug: string
   is_public: boolean
   chat_title: string

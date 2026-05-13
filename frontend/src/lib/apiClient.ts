@@ -9,7 +9,7 @@ export const logout = () => api.post('/auth/logout')
 
 // Bot
 export const fetchBot = () => api.get<Bot>('/bot').then(r => r.data)
-export const createBot = (data: { name: string; chat_title: string; public_slug: string }) =>
+export const createBot = (data: { chat_title: string; public_slug: string }) =>
   api.post<Bot>('/bot', data).then(r => r.data)
 export const updateBot = (data: Partial<Bot>) => api.patch<Bot>('/bot', data).then(r => r.data)
 export const checkSlug = (value: string) =>

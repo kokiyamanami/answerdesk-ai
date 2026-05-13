@@ -24,7 +24,6 @@ SLUG_PATTERN = re.compile(r'^[a-z0-9](?:[a-z0-9-]{1,48}[a-z0-9])?$')
 
 class BotResponse(BaseModel):
     id: str
-    name: str
     public_slug: str
     is_public: bool
     chat_title: str
@@ -42,7 +41,6 @@ class BotResponse(BaseModel):
 
 
 class BotCreateRequest(BaseModel):
-    name: str
     chat_title: str
     public_slug: str
 
@@ -55,7 +53,6 @@ class BotCreateRequest(BaseModel):
 
 
 class BotUpdateRequest(BaseModel):
-    name: Optional[str] = None
     chat_title: Optional[str] = None
     public_slug: Optional[str] = None
     is_public: Optional[bool] = None
@@ -84,7 +81,6 @@ class SlugCheckResponse(BaseModel):
 def _bot_to_response(bot: Bot) -> BotResponse:
     return BotResponse(
         id=str(bot.id),
-        name=bot.name,
         public_slug=bot.public_slug,
         is_public=bot.is_public,
         chat_title=bot.chat_title,
@@ -119,7 +115,7 @@ def create_bot(body: BotCreateRequest, current_user: User = Depends(get_current_
                             detail={"code": "slug_already_taken", "message": "このURLはすでに使用されています。"})
     bot = Bot(
         user_id=current_user.id,
-        name=body.name,
+        name=body.chat_title,
         chat_title=body.chat_title,
         public_slug=body.public_slug,
         fallback_message="申し訳ありませんが、お答えできませんでした。お問い合わせください。",

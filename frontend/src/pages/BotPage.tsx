@@ -34,7 +34,7 @@ export default function BotPage() {
     setSaving(true); setAlert(null)
     try {
       if (!bot) {
-        const created = await createBot({ name: form.name || 'マイボット', chat_title: form.chat_title || 'チャット', public_slug: form.public_slug! })
+        const created = await createBot({ chat_title: form.chat_title || 'チャット', public_slug: form.public_slug! })
         setBot(created); setForm(created)
       } else {
         const updated = await updateBot(form)
@@ -62,12 +62,6 @@ export default function BotPage() {
       </div>
 
       <div className="card">
-        <div className="form-field">
-          <label className="form-label">ボット名</label>
-          <input className="form-input" style={{ maxWidth: 400 }}
-            value={form.name || ''} onChange={e => setForm(f => ({ ...f, name: e.target.value }))} />
-        </div>
-
         <div className="form-field">
           <label className="form-label">チャットタイトル</label>
           <input className="form-input" style={{ maxWidth: 400 }}
