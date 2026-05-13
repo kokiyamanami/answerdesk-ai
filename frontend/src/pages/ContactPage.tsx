@@ -1,15 +1,20 @@
 import { useEffect, useState } from 'react'
 import { fetchBot, updateBot } from '../lib/apiClient'
 import type { Bot } from '../types/api'
+import { FORM_FIELD_DEFS, mergeFormFields, type FormFieldConfig } from '../data/formFields'
 
 export default function ContactPage() {
   const [bot, setBot] = useState<Bot | null>(null)
   const [form, setForm] = useState<Partial<Bot>>({})
+  const [formFields, setFormFields] = useState<FormFieldConfig[]>(mergeFormFields(null))
   const [saving, setSaving] = useState(false)
   const [alert, setAlert] = useState<{ type: 'success' | 'error'; msg: string } | null>(null)
 
   useEffect(() => {
-    fetchBot().then(b => { setBot(b); setForm(b) }).catch(() => {})
+    fetchBot().then(b => {
+      setBot(b); setForm(b)
+      setFormFields(mergeFormFields(b.form_fields as FormFieldConfig[]))
+    }).catch(() => {})
   }, [])
 
   const handleSave = async () => {
@@ -21,8 +26,10 @@ export default function ContactPage() {
         fallback_message: form.fallback_message,
         fallback_contact_url: form.fallback_contact_url,
         fallback_contact_email: form.fallback_contact_email,
+        form_fields: formFields,
       })
       setBot(updated); setForm(updated)
+      setFormFields(mergeFormFields(updated.form_fields as FormFieldConfig[]))
       setAlert({ type: 'success', msg: '保存しました。' })
     } catch {
       setAlert({ type: 'error', msg: '保存に失敗しました。' })
@@ -80,6 +87,44 @@ export default function ContactPage() {
             placeholder="support@example.com"
             disabled={!form.fallback_enabled} />
         </div>
+      </div>
+
+      {/* 問い合わせフォーム項目設定 */}
+      <div className="card" style={{ marginTop: 24 }}>
+        <h2 style={{ fontSize: 15, fontWeight: 700, marginBottom: 4, color: 'var(--gray-800)' }}>問い合わせフォーム</h2>
+        <p style={{ fontSize: 13, color: 'var(--gray-500)', marginBottom: 16 }}>
+          フォールバック時にチャット内に表示するフォームの項目を設定します。
+        </p>
+        <div style={{ display: 'flex', flexDirection: 'column', gap: 4 }}>
+          <div style={{ display: 'grid', gridTemplateColumns: '1fr 80px 80px', gap: 8, padding: '0 4px 8px', borderBottom: '1px solid var(--gray-100)' }}>
+            <span style={{ fontSize: 12, color: 'var(--gray-500)', fontWeight: 600 }}>項目</span>
+            <span style={{ fontSize: 12, color: 'var(--gray-500)', fontWeight: 600, textAlign: 'center' }}>表示</span>
+            <span style={{ fontSize: 12, color: 'var(--gray-500)', fontWeight: 600, textAlign: 'center' }}>必須</span>
+          </div>
+          {FORM_FIELD_DEFS.map(def => {
+            const field = formFields.find(f => f.key === def.key)!
+            return (
+              <div key={def.key} style={{ display: 'grid', gridTemplateColumns: '1fr 80px 80px', gap: 8, alignItems: 'center', padding: '6px 4px' }}>
+                <span style={{ fontSize: 14, color: 'var(--gray-700)' }}>{def.label}</span>
+                <div style={{ display: 'flex', justifyContent: 'center' }}>
+                  <label className="toggle">
+                    <input type="checkbox" checked={field.enabled}
+                      onChange={e => setFormFields(fs => fs.map(f => f.key === def.key ? { ...f, enabled: e.target.checked, required: e.target.checked ? f.required : false } : f))} />
+                    <span className="toggle-track" />
+                  </label>
+                </div>
+                <div style={{ display: 'flex', justifyContent: 'center' }}>
+                  <input type="checkbox" checked={field.required} disabled={!field.enabled}
+                    onChange={e => setFormFields(fs => fs.map(f => f.key === def.key ? { ...f, required: e.target.checked } : f))}
+                    style={{ width: 16, height: 16, cursor: field.enabled ? 'pointer' : 'default' }} />
+                </div>
+              </div>
+            )
+          })}
+        </div>
+        {formFields.every(f => !f.enabled) && (
+          <p style={{ fontSize: 12, color: 'var(--gray-400)', marginTop: 12 }}>※ 項目をオンにするとフォールバック時にフォームが表示されます。</p>
+        )}
       </div>
 
       {alert && <div className={`alert alert-${alert.type}`} style={{ marginTop: 16 }}>{alert.msg}</div>}
