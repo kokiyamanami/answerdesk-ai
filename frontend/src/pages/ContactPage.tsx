@@ -111,7 +111,7 @@ export default function ContactPage() {
                 <input className="form-input" style={{ width: '100%', cursor: 'pointer', pointerEvents: 'none' }}
                   type="email"
                   value={form.fallback_contact_email || ''}
-                  placeholder="support@example.com"
+                  placeholder="例: info@yourcompany.com"
                   readOnly />
                 <div style={{
                   position: 'absolute', inset: 0, borderRadius: 8,

@@ -86,7 +86,7 @@ export default function RegisterPage() {
                 type="password"
                 value={form.password}
                 onChange={e => setForm(f => ({ ...f, password: e.target.value }))}
-                placeholder="••••••••"
+                placeholder="8文字以上で入力"
                 required
                 autoComplete="new-password"
               />
@@ -100,7 +100,7 @@ export default function RegisterPage() {
                 type="password"
                 value={form.confirm}
                 onChange={e => setForm(f => ({ ...f, confirm: e.target.value }))}
-                placeholder="••••••••"
+                placeholder="もう一度入力"
                 required
                 autoComplete="new-password"
               />
