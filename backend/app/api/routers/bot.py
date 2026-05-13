@@ -191,8 +191,8 @@ async def upload_icon(
     file_name = f"{uuid.uuid4().hex}.{ext}"
 
     if settings.app_env != "prod":
-        # dev: /tmp/answerdesk_uploads/icons/ に保存
-        save_dir = f"/tmp/answerdesk_uploads/icons"
+        # dev: /app/uploads/icons/ に保存
+        save_dir = "/app/uploads/icons"
         os.makedirs(save_dir, exist_ok=True)
         with open(f"{save_dir}/{file_name}", "wb") as f:
             f.write(contents)

@@ -24,7 +24,7 @@ app.add_middleware(
 
 # dev環境のみローカルストレージを公開
 if settings.app_env != "prod":
-    _static_dir = "/tmp/answerdesk_uploads"
+    _static_dir = "/app/uploads"
     os.makedirs(_static_dir, exist_ok=True)
     app.mount("/uploads", StaticFiles(directory=_static_dir), name="uploads")
 

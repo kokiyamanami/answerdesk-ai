@@ -86,7 +86,7 @@ async def upload_document(
     s3_key = f"documents/{bot.id}/{doc_id}/{file.filename}"
 
     if settings.app_env != "prod":
-        save_dir = f"/tmp/answerdesk_uploads/documents/{bot.id}/{doc_id}"
+        save_dir = f"/app/uploads/documents/{bot.id}/{doc_id}"
         os.makedirs(save_dir, exist_ok=True)
         with open(f"{save_dir}/{file.filename}", "wb") as f:
             f.write(content)

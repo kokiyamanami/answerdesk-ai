@@ -25,8 +25,8 @@ def _download_pdf(storage_url: str) -> bytes:
     if storage_url.startswith("s3://"):
         return _download_from_s3(storage_url)
     elif storage_url.startswith("/uploads/"):
-        # dev: /tmp/answerdesk_uploads/ 配下に保存されている
-        local_path = "/tmp/answerdesk_uploads" + storage_url[len("/uploads"):]
+        # dev: /app/uploads/ 配下に保存されている
+        local_path = "/app" + storage_url
         with open(local_path, "rb") as f:
             return f.read()
     else:

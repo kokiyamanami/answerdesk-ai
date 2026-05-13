@@ -78,10 +78,10 @@ def _vector_search(bot_id: UUID, embedding: list[float], db: Session) -> list[di
     embedding_str = "[" + ",".join(str(v) for v in embedding) + "]"
     sql = text("""
         SELECT id, title, content, source_kind,
-               1 - (embedding <=> :embedding::vector) AS score
+               1 - (embedding <=> CAST(:embedding AS vector)) AS score
         FROM document_chunks
         WHERE bot_id = :bot_id AND is_active = true
-        ORDER BY embedding <=> :embedding::vector
+        ORDER BY embedding <=> CAST(:embedding AS vector)
         LIMIT :top_k
     """)
     rows = db.execute(sql, {

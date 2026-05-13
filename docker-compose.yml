@@ -27,6 +27,7 @@ services:
       - "8000:8000"
     volumes:
       - ./backend:/app
+      - upload_data:/app/uploads
     depends_on:
       db:
         condition: service_healthy
@@ -41,6 +42,7 @@ services:
       - .env
     volumes:
       - ./backend:/app
+      - upload_data:/app/uploads
     depends_on:
       db:
         condition: service_healthy
@@ -63,3 +65,4 @@ services:
 
 volumes:
   postgres_data:
+  upload_data:
