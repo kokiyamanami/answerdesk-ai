@@ -12,12 +12,14 @@ import DocumentPage, { DocumentUploadPage } from './pages/DocumentPage'
 import TestChatPage from './pages/TestChatPage'
 import ConversationPage from './pages/ConversationPage'
 import PublicChatPage from './pages/PublicChatPage'
+import LandingPage from './pages/LandingPage'
 
 function App() {
   return (
     <AuthProvider>
       <BrowserRouter>
         <Routes>
+          <Route path="/" element={<LandingPage />} />
           <Route path="/login" element={<LoginPage />} />
           <Route path="/register" element={<RegisterPage />} />
           <Route path="/c/:slug" element={<PublicChatPage />} />
@@ -38,7 +40,7 @@ function App() {
             </Route>
           </Route>
 
-          <Route path="*" element={<Navigate to="/login" replace />} />
+          <Route path="*" element={<Navigate to="/" replace />} />
         </Routes>
       </BrowserRouter>
     </AuthProvider>
