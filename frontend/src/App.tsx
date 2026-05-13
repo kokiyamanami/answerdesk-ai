@@ -10,6 +10,7 @@ import ContactPage from './pages/ContactPage'
 import FAQPage, { FAQFormPage } from './pages/FAQPage'
 import DocumentPage, { DocumentUploadPage } from './pages/DocumentPage'
 import ConversationPage from './pages/ConversationPage'
+import FormSubmissionsPage from './pages/FormSubmissionsPage'
 import PublicChatPage from './pages/PublicChatPage'
 import LandingPage from './pages/LandingPage'
 
@@ -34,6 +35,7 @@ function App() {
               <Route path="/app/documents" element={<DocumentPage />} />
               <Route path="/app/documents/upload" element={<DocumentUploadPage />} />
               <Route path="/app/conversations" element={<ConversationPage />} />
+              <Route path="/app/form-submissions" element={<FormSubmissionsPage />} />
               <Route path="/app" element={<Navigate to="/app/bot" replace />} />
             </Route>
           </Route>

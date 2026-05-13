@@ -1,6 +1,6 @@
 import uuid
 
-from sqlalchemy import Boolean, Column, DateTime, ForeignKey, String, Text, func
+from sqlalchemy import Boolean, Column, DateTime, ForeignKey, JSON, String, Text, func
 from sqlalchemy.dialects.postgresql import UUID
 from sqlalchemy.orm import relationship
 
@@ -26,6 +26,7 @@ class Bot(Base):
     rag_score_threshold = Column("rag_score_threshold", __import__('sqlalchemy').Float, nullable=False, default=0.5)
     ai_model = Column(String(50), nullable=False, default="gpt-4.1-mini")
     industry = Column(String(50), nullable=True)
+    form_fields = Column(JSON, nullable=True)
     status = Column(String(50), nullable=False, default="active")
     created_at = Column(DateTime, nullable=False, default=func.now())
     updated_at = Column(DateTime, nullable=False, default=func.now(), onupdate=func.now())

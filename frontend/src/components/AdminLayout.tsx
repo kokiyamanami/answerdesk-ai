@@ -5,12 +5,13 @@ import { useAuth } from '../contexts/AuthContext'
 import '../admin.css'
 
 const NAV_ITEMS = [
-  { to: '/app/bot',           icon: '🤖', label: 'ボット設定' },
-  { to: '/app/design',        icon: '🎨', label: 'デザイン' },
-  { to: '/app/contact',       icon: '📬', label: '問い合わせ' },
-  { to: '/app/faqs',          icon: '💬', label: 'FAQ' },
-  { to: '/app/documents',     icon: '📄', label: 'ドキュメント' },
-  { to: '/app/conversations', icon: '🗂️', label: '会話ログ' },
+  { to: '/app/bot',              icon: '🤖', label: 'ボット設定' },
+  { to: '/app/design',           icon: '🎨', label: 'デザイン' },
+  { to: '/app/contact',          icon: '📬', label: '問い合わせ' },
+  { to: '/app/faqs',             icon: '💬', label: 'FAQ' },
+  { to: '/app/documents',        icon: '📄', label: 'ドキュメント' },
+  { to: '/app/conversations',    icon: '🗂️', label: '会話ログ' },
+  { to: '/app/form-submissions', icon: '📩', label: 'フォーム送信' },
 ]
 
 export default function AdminLayout() {

@@ -38,6 +38,7 @@ class BotResponse(BaseModel):
     rag_score_threshold: float
     ai_model: str
     industry: Optional[str]
+    form_fields: Optional[list] = None
 
     model_config = {"from_attributes": True}
 
@@ -68,6 +69,7 @@ class BotUpdateRequest(BaseModel):
     rag_score_threshold: Optional[float] = None
     ai_model: Optional[str] = None
     industry: Optional[str] = None
+    form_fields: Optional[list] = None
 
     @field_validator("public_slug")
     @classmethod
@@ -99,6 +101,7 @@ def _bot_to_response(bot: Bot) -> BotResponse:
         rag_score_threshold=bot.rag_score_threshold if bot.rag_score_threshold is not None else 0.5,
         ai_model=bot.ai_model or "gpt-4.1-mini",
         industry=bot.industry,
+        form_fields=bot.form_fields,
     )
 
 

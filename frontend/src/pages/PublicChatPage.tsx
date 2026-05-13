@@ -4,14 +4,17 @@ import {
   fetchPublicBot,
   createPublicConversation,
   sendPublicMessage,
+  submitPublicForm,
 } from '../lib/apiClient'
 import type { ChatResponse } from '../types/api'
+import { FORM_FIELD_DEFS, type FormFieldConfig } from '../data/formFields'
 
 interface BotInfo {
   name: string
   chat_title: string
   icon_url: string | null
   welcome_message: string | null
+  form_fields: FormFieldConfig[] | null
   theme: {
     background_color: string
     button_color: string
@@ -26,6 +29,7 @@ interface Message {
   fallback?: boolean
   citations?: ChatResponse['citations']
   contact?: ChatResponse['contact']
+  showForm?: boolean
 }
 
 function TypingIndicator({ color }: { color: string }) {
@@ -57,6 +61,9 @@ export default function PublicChatPage() {
   const [messages, setMessages] = useState<Message[]>([])
   const [input, setInput] = useState('')
   const [sending, setSending] = useState(false)
+  const [formValues, setFormValues] = useState<Record<number, Record<string, string>>>({})
+  const [formSubmitted, setFormSubmitted] = useState<Set<number>>(new Set())
+  const [formSubmitting, setFormSubmitting] = useState<number | null>(null)
   const bottomRef = useRef<HTMLDivElement>(null)
   const textareaRef = useRef<HTMLTextAreaElement>(null)
 
@@ -99,12 +106,14 @@ export default function PublicChatPage() {
     try {
       const convId = await ensureConversation()
       const res = await sendPublicMessage(slug!, convId, text)
+      const enabledFields = (bot as BotInfo | null)?.form_fields?.filter(f => f.enabled) ?? []
       setMessages(m => [...m, {
         role: 'assistant',
         content: res.answer,
         fallback: res.fallback,
         citations: res.citations,
         contact: res.contact,
+        showForm: res.fallback && enabledFields.length > 0,
       }])
     } catch {
       setMessages(m => [...m, { role: 'assistant', content: 'エラーが発生しました。しばらくしてから再度お試しください。' }])
@@ -115,6 +124,20 @@ export default function PublicChatPage() {
 
   const handleKeyDown = (e: React.KeyboardEvent) => {
     if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); send() }
+  }
+
+  const handleFormSubmit = async (msgIndex: number) => {
+    const values = formValues[msgIndex] ?? {}
+    const enabledFields = bot?.form_fields?.filter(f => f.enabled) ?? []
+    const hasRequired = enabledFields.filter(f => f.required).every(f => (values[f.key] ?? '').trim())
+    if (!hasRequired) return
+    setFormSubmitting(msgIndex)
+    try {
+      await submitPublicForm(slug!, conversationId, values)
+      setFormSubmitted(prev => new Set(prev).add(msgIndex))
+    } finally {
+      setFormSubmitting(null)
+    }
   }
 
   const theme = bot?.theme
@@ -212,7 +235,66 @@ export default function PublicChatPage() {
               border: msg.role === 'assistant' ? '1px solid rgba(0,0,0,.06)' : 'none',
             }}>
               <p style={{ margin: 0, whiteSpace: 'pre-wrap' }}>{msg.content}</p>
-              {msg.fallback && (msg.contact?.url || msg.contact?.email) && (
+
+              {/* フォールバック時インラインフォーム */}
+              {msg.showForm && (() => {
+                const enabledFields = bot?.form_fields?.filter(f => f.enabled) ?? []
+                if (formSubmitted.has(i)) {
+                  return (
+                    <div style={{ marginTop: 10, paddingTop: 10, borderTop: '1px solid rgba(0,0,0,.08)', fontSize: 13, color: '#15803d' }}>
+                      ✅ 送信しました。担当者よりご連絡いたします。
+                    </div>
+                  )
+                }
+                return (
+                  <div style={{ marginTop: 12, paddingTop: 12, borderTop: '1px solid rgba(0,0,0,.08)' }}>
+                    <p style={{ margin: '0 0 10px', fontSize: 12, fontWeight: 600, color: textColor }}>お問い合わせフォーム</p>
+                    <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
+                      {FORM_FIELD_DEFS.filter(def => enabledFields.some(f => f.key === def.key)).map(def => {
+                        const field = enabledFields.find(f => f.key === def.key)!
+                        const val = formValues[i]?.[def.key] ?? ''
+                        const isTextarea = def.key === 'body'
+                        const inputStyle: React.CSSProperties = {
+                          width: '100%', boxSizing: 'border-box',
+                          padding: '7px 10px', fontSize: 13,
+                          border: '1px solid rgba(0,0,0,.15)', borderRadius: 8,
+                          background: '#fff', color: '#1e293b',
+                          fontFamily: 'inherit', outline: 'none', resize: 'vertical' as const,
+                        }
+                        return (
+                          <div key={def.key}>
+                            <label style={{ fontSize: 11, fontWeight: 600, color: 'rgba(0,0,0,.5)', display: 'block', marginBottom: 3 }}>
+                              {def.label}{field.required && <span style={{ color: '#ef4444', marginLeft: 2 }}>*</span>}
+                            </label>
+                            {isTextarea
+                              ? <textarea rows={3} style={inputStyle} value={val}
+                                  onChange={e => setFormValues(v => ({ ...v, [i]: { ...v[i], [def.key]: e.target.value } }))} />
+                              : <input type={def.key === 'email' ? 'email' : def.key === 'phone' ? 'tel' : 'text'}
+                                  style={inputStyle} value={val}
+                                  onChange={e => setFormValues(v => ({ ...v, [i]: { ...v[i], [def.key]: e.target.value } }))} />
+                            }
+                          </div>
+                        )
+                      })}
+                    </div>
+                    <button
+                      onClick={() => handleFormSubmit(i)}
+                      disabled={formSubmitting === i}
+                      style={{
+                        marginTop: 10, padding: '8px 18px', fontSize: 13, fontWeight: 600,
+                        background: primaryColor, color: '#fff', border: 'none',
+                        borderRadius: 8, cursor: formSubmitting === i ? 'default' : 'pointer',
+                        opacity: formSubmitting === i ? 0.7 : 1,
+                      }}
+                    >
+                      {formSubmitting === i ? '送信中...' : '送信する'}
+                    </button>
+                  </div>
+                )
+              })()}
+
+              {/* フォームがない場合の連絡先リンク */}
+              {msg.fallback && !msg.showForm && (msg.contact?.url || msg.contact?.email) && (
                 <div style={{ marginTop: 10, paddingTop: 10, borderTop: '1px solid rgba(0,0,0,.08)', fontSize: 12 }}>
                   {msg.contact?.url && (
                     <a href={msg.contact.url} target="_blank" rel="noreferrer"

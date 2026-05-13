@@ -1,5 +1,5 @@
 import api from '../lib/api'
-import type { Bot, ThemePreset, FAQ, Document, ConversationSummary, ChatResponse, User } from '../types/api'
+import type { Bot, ThemePreset, FAQ, Document, ConversationSummary, ChatResponse, User, FormSubmission } from '../types/api'
 
 // Auth
 export const fetchMe = () => api.get<User>('/auth/me').then(r => r.data)
@@ -48,6 +48,10 @@ export const deleteDocument = (id: string) => api.delete(`/documents/${id}`)
 export const fetchConversations = () =>
   api.get<ConversationSummary[]>('/conversations').then(r => r.data)
 
+// Form Submissions (admin)
+export const fetchFormSubmissions = () =>
+  api.get<FormSubmission[]>('/form-submissions').then(r => r.data)
+
 // Public Chat
 export const fetchPublicBot = (slug: string) =>
   api.get(`/public/bots/${slug}`).then(r => r.data)
@@ -55,3 +59,5 @@ export const createPublicConversation = (slug: string) =>
   api.post<{ conversation_id: string }>(`/public/bots/${slug}/conversations`).then(r => r.data)
 export const sendPublicMessage = (slug: string, conversationId: string, message: string) =>
   api.post<ChatResponse>(`/public/bots/${slug}/messages`, { conversation_id: conversationId, message }).then(r => r.data)
+export const submitPublicForm = (slug: string, conversationId: string | null, data: Record<string, string>) =>
+  api.post(`/public/bots/${slug}/form-submissions`, { conversation_id: conversationId, data }).then(r => r.data)

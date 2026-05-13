@@ -11,6 +11,7 @@ from app.api.deps import get_current_user
 from app.db.session import get_db
 from app.models.bot import Bot
 from app.models.conversation import Conversation, Message
+from app.models.form_submission import FormSubmission
 from app.models.user import User
 
 router = APIRouter(prefix="/public", tags=["public"])
@@ -23,6 +24,7 @@ class PublicBotResponse(BaseModel):
     icon_url: Optional[str]
     welcome_message: Optional[str]
     theme: Optional[dict]
+    form_fields: Optional[list] = None
 
 
 class StartConversationResponse(BaseModel):
@@ -80,6 +82,7 @@ def get_public_bot(slug: str, db: Session = Depends(get_db)):
         icon_url=bot.icon_url,
         welcome_message=bot.welcome_message,
         theme=theme,
+        form_fields=bot.form_fields,
     )
 
 
@@ -132,3 +135,30 @@ def send_message(slug: str, body: PublicMessageRequest, db: Session = Depends(ge
                    for c in result.get("citations", [])],
         contact=result.get("contact"),
     )
+
+
+class FormSubmissionRequest(BaseModel):
+    conversation_id: Optional[str] = None
+    data: dict
+
+
+@router.post("/bots/{slug}/form-submissions", status_code=status.HTTP_201_CREATED)
+def submit_form(slug: str, body: FormSubmissionRequest, db: Session = Depends(get_db)):
+    bot = _get_public_bot(slug, db)
+    conv_id = None
+    if body.conversation_id:
+        conv = db.query(Conversation).filter(
+            Conversation.id == UUID(body.conversation_id),
+            Conversation.bot_id == bot.id,
+        ).first()
+        if conv:
+            conv_id = conv.id
+
+    submission = FormSubmission(
+        bot_id=bot.id,
+        conversation_id=conv_id,
+        data=body.data,
+    )
+    db.add(submission)
+    db.commit()
+    return {"ok": True}

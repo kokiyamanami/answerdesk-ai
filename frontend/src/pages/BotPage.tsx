@@ -3,6 +3,7 @@ import { fetchBot, createBot, updateBot, checkSlug } from '../lib/apiClient'
 import type { Bot } from '../types/api'
 import UpgradeModal from '../components/UpgradeModal'
 import { INDUSTRIES } from '../data/faqTemplates'
+import { FORM_FIELD_DEFS, mergeFormFields, type FormFieldConfig } from '../data/formFields'
 
 const BASE_URL = window.location.origin + '/c/'
 
@@ -14,11 +15,12 @@ export default function BotPage() {
   const [alert, setAlert] = useState<{ type: 'success' | 'error'; msg: string } | null>(null)
   const [copied, setCopied] = useState(false)
   const [showUpgradeModal, setShowUpgradeModal] = useState(false)
+  const [formFields, setFormFields] = useState<FormFieldConfig[]>(mergeFormFields(null))
   const slugTimer = useRef<ReturnType<typeof setTimeout> | null>(null)
 
   useEffect(() => {
     fetchBot().catch(() => null).then(b => {
-      if (b) { setBot(b); setForm(b) }
+      if (b) { setBot(b); setForm(b); setFormFields(mergeFormFields(b.form_fields as FormFieldConfig[])) }
     })
   }, [])
 
@@ -40,8 +42,8 @@ export default function BotPage() {
         const created = await createBot({ chat_title: form.chat_title || 'チャット', public_slug: form.public_slug! })
         setBot(created); setForm(created)
       } else {
-        const updated = await updateBot(form)
-        setBot(updated); setForm(updated)
+        const updated = await updateBot({ ...form, form_fields: formFields })
+        setBot(updated); setForm(updated); setFormFields(mergeFormFields(updated.form_fields as FormFieldConfig[]))
       }
       setAlert({ type: 'success', msg: '保存しました。' })
     } catch {
@@ -242,6 +244,44 @@ export default function BotPage() {
               : '✅ 推奨範囲内です。（目安: 35〜75%）'}
           </span>
         </div>
+      </div>
+
+      {/* フォーム設定 */}
+      <div className="card" style={{ marginTop: 24 }}>
+        <h2 style={{ fontSize: 15, fontWeight: 700, marginBottom: 4, color: 'var(--gray-800)' }}>フォールバック時の問い合わせフォーム</h2>
+        <p style={{ fontSize: 13, color: 'var(--gray-500)', marginBottom: 16 }}>
+          AIが回答できなかった際に表示するフォームの項目を設定します。
+        </p>
+        <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
+          <div style={{ display: 'grid', gridTemplateColumns: '1fr 80px 80px', gap: 8, padding: '0 4px 8px', borderBottom: '1px solid var(--gray-100)' }}>
+            <span style={{ fontSize: 12, color: 'var(--gray-500)', fontWeight: 600 }}>項目</span>
+            <span style={{ fontSize: 12, color: 'var(--gray-500)', fontWeight: 600, textAlign: 'center' }}>表示</span>
+            <span style={{ fontSize: 12, color: 'var(--gray-500)', fontWeight: 600, textAlign: 'center' }}>必須</span>
+          </div>
+          {FORM_FIELD_DEFS.map(def => {
+            const field = formFields.find(f => f.key === def.key)!
+            return (
+              <div key={def.key} style={{ display: 'grid', gridTemplateColumns: '1fr 80px 80px', gap: 8, alignItems: 'center', padding: '4px 4px' }}>
+                <span style={{ fontSize: 14, color: 'var(--gray-700)' }}>{def.label}</span>
+                <div style={{ display: 'flex', justifyContent: 'center' }}>
+                  <label className="toggle">
+                    <input type="checkbox" checked={field.enabled}
+                      onChange={e => setFormFields(fs => fs.map(f => f.key === def.key ? { ...f, enabled: e.target.checked, required: e.target.checked ? f.required : false } : f))} />
+                    <span className="toggle-track" />
+                  </label>
+                </div>
+                <div style={{ display: 'flex', justifyContent: 'center' }}>
+                  <input type="checkbox" checked={field.required} disabled={!field.enabled}
+                    onChange={e => setFormFields(fs => fs.map(f => f.key === def.key ? { ...f, required: e.target.checked } : f))}
+                    style={{ width: 16, height: 16, cursor: field.enabled ? 'pointer' : 'default' }} />
+                </div>
+              </div>
+            )
+          })}
+        </div>
+        {formFields.every(f => !f.enabled) && (
+          <p style={{ fontSize: 12, color: 'var(--gray-400)', marginTop: 12 }}>※ 項目をオンにするとフォールバック時にフォームが表示されます。</p>
+        )}
       </div>
 
       {alert && <div className={`alert alert-${alert.type}`} style={{ marginTop: 16 }}>{alert.msg}</div>}

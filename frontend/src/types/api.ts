@@ -22,6 +22,17 @@ export interface Bot {
   rag_score_threshold: number
   ai_model: string
   industry: string | null
+  form_fields: FormFieldConfig[] | null
+}
+
+import type { FormFieldConfig } from '../data/formFields'
+export type { FormFieldConfig }
+
+export interface FormSubmission {
+  id: string
+  conversation_id: string | null
+  data: Record<string, string>
+  submitted_at: string
 }
 
 export interface ThemePreset {
