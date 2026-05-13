@@ -174,57 +174,110 @@ export default function DesignPage() {
           <div style={{
             border: '1px solid var(--gray-200)', borderRadius: 14,
             overflow: 'hidden', boxShadow: '0 4px 20px rgba(0,0,0,.08)',
+            display: 'flex', flexDirection: 'column', height: 420,
+            fontFamily: "'Hiragino Sans','Noto Sans JP',system-ui,sans-serif",
           }}>
             {/* Header */}
             <div style={{
               background: selectedTheme?.button_color || 'var(--brand)',
-              color: '#fff', padding: '13px 16px',
-              fontWeight: 600, fontSize: 14,
-              display: 'flex', alignItems: 'center', gap: 8,
+              color: '#fff', padding: '0 14px', height: 52,
+              display: 'flex', alignItems: 'center', gap: 10,
+              boxShadow: '0 2px 8px rgba(0,0,0,.12)',
+              flexShrink: 0,
             }}>
-              {form.icon_url
-                ? <img src={form.icon_url} alt="icon" style={{ width: 20, height: 20, borderRadius: 4, objectFit: 'cover' }} />
-                : <span style={{ fontSize: 16 }}>💬</span>
-              }
-              {form.chat_title || 'チャット'}
+              <div style={{
+                width: 30, height: 30, borderRadius: 8,
+                background: 'rgba(255,255,255,0.2)',
+                display: 'flex', alignItems: 'center', justifyContent: 'center',
+                overflow: 'hidden', flexShrink: 0,
+              }}>
+                {form.icon_url
+                  ? <img src={form.icon_url} alt="icon" style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
+                  : <span style={{ fontSize: 15 }}>💬</span>
+                }
+              </div>
+              <div>
+                <div style={{ fontWeight: 700, fontSize: 13, lineHeight: 1.3 }}>
+                  {form.chat_title || 'チャット'}
+                </div>
+                <div style={{ fontSize: 10, opacity: 0.8, display: 'flex', alignItems: 'center', gap: 3 }}>
+                  <span style={{ width: 5, height: 5, borderRadius: '50%', background: '#4ade80', display: 'inline-block' }} />
+                  オンライン
+                </div>
+              </div>
             </div>
             {/* Body */}
             <div style={{
-              background: selectedTheme?.background_color || 'var(--gray-50)',
-              minHeight: 180, padding: 14,
+              flex: 1, overflowY: 'auto',
+              background: selectedTheme?.background_color || '#f8fafc',
+              padding: 14,
+              display: 'flex', flexDirection: 'column', gap: 10,
             }}>
               {form.welcome_message ? (
-                <div style={{
-                  background: selectedTheme?.bubble_color || '#fff',
-                  color: selectedTheme?.text_color || 'var(--gray-800)',
-                  border: '1px solid var(--gray-200)',
-                  borderRadius: '4px 12px 12px 12px',
-                  padding: '8px 12px', fontSize: 13,
-                  maxWidth: '85%', lineHeight: 1.5,
-                }}>
-                  {form.welcome_message}
+                <div style={{ display: 'flex', alignItems: 'flex-end', gap: 6 }}>
+                  <div style={{
+                    width: 24, height: 24, borderRadius: 6, flexShrink: 0,
+                    background: selectedTheme?.button_color || 'var(--brand)',
+                    display: 'flex', alignItems: 'center', justifyContent: 'center',
+                    overflow: 'hidden',
+                  }}>
+                    {form.icon_url
+                      ? <img src={form.icon_url} alt="bot" style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
+                      : <span style={{ fontSize: 12 }}>💬</span>
+                    }
+                  </div>
+                  <div style={{
+                    background: selectedTheme?.bubble_color || '#ffffff',
+                    color: selectedTheme?.text_color || '#1e293b',
+                    border: '1px solid rgba(0,0,0,.06)',
+                    borderRadius: '4px 14px 14px 14px',
+                    padding: '8px 12px', fontSize: 12, lineHeight: 1.6,
+                    maxWidth: '80%',
+                    boxShadow: '0 1px 3px rgba(0,0,0,.05)',
+                  }}>
+                    {form.welcome_message}
+                  </div>
                 </div>
               ) : (
-                <p style={{ color: 'var(--gray-400)', fontSize: 12, textAlign: 'center', marginTop: 40 }}>
+                <p style={{ color: 'var(--gray-400)', fontSize: 11, textAlign: 'center', marginTop: 40 }}>
                   初期メッセージが表示されます
                 </p>
               )}
+              {/* Sample user message */}
+              <div style={{ display: 'flex', justifyContent: 'flex-end' }}>
+                <div style={{
+                  background: selectedTheme?.button_color || 'var(--brand)',
+                  color: '#fff',
+                  borderRadius: '14px 4px 14px 14px',
+                  padding: '8px 12px', fontSize: 12, lineHeight: 1.6,
+                  maxWidth: '72%',
+                  boxShadow: `0 2px 8px ${selectedTheme?.button_color || '#4f46e5'}44`,
+                }}>
+                  質問があります
+                </div>
+              </div>
             </div>
             {/* Input */}
             <div style={{
-              background: '#fff', borderTop: '1px solid var(--gray-200)',
-              padding: '10px 12px', display: 'flex', gap: 8,
+              padding: '10px 12px',
+              background: '#fff',
+              borderTop: '1px solid rgba(0,0,0,.07)',
+              boxShadow: '0 -3px 12px rgba(0,0,0,.04)',
+              flexShrink: 0,
             }}>
-              <input readOnly placeholder="メッセージを入力..." style={{
-                flex: 1, border: '1px solid var(--gray-200)', borderRadius: 8,
-                padding: '7px 10px', fontSize: 12, background: 'var(--gray-50)',
-                outline: 'none',
-              }} />
-              <button style={{
-                background: selectedTheme?.button_color || 'var(--brand)',
-                color: '#fff', border: 'none', borderRadius: 8,
-                padding: '7px 14px', fontSize: 12, cursor: 'default',
-              }}>送信</button>
+              <div style={{
+                display: 'flex', gap: 6, alignItems: 'center',
+                background: '#f1f5f9', borderRadius: 12,
+                padding: '5px 5px 5px 12px',
+              }}>
+                <span style={{ flex: 1, fontSize: 11, color: '#94a3b8' }}>メッセージを入力...</span>
+                <div style={{
+                  width: 30, height: 30, borderRadius: 9,
+                  background: selectedTheme?.button_color || 'var(--brand)',
+                  display: 'flex', alignItems: 'center', justifyContent: 'center',
+                  color: '#fff', fontSize: 14, fontWeight: 700,
+                }}>↑</div>
+              </div>
             </div>
           </div>
         </div>
