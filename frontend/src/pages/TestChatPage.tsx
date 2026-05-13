@@ -47,19 +47,23 @@ export default function TestChatPage() {
   }
 
   return (
-    <div style={{ display: 'flex', flexDirection: 'column', height: 'calc(100vh - 64px)' }}>
-      <h1 style={{ fontSize: 22, marginBottom: 16 }}>テストチャット</h1>
+    <div style={{ display: 'flex', flexDirection: 'column', height: 'calc(100vh - 52px)' }}>
+      <div className="page-header" style={{ marginBottom: 16 }}>
+        <h1 className="page-title">テストチャット</h1>
+        <p className="page-desc">実際の応答をリアルタイムで確認できます。</p>
+      </div>
 
       {/* Chat messages */}
-      <div style={{
-        flex: 1, overflowY: 'auto', border: '1px solid #e2e8f0',
-        borderRadius: 8, padding: 16, background: '#f8fafc',
-        display: 'flex', flexDirection: 'column', gap: 12,
+      <div className="card" style={{
+        flex: 1, overflowY: 'auto', padding: 20,
+        display: 'flex', flexDirection: 'column', gap: 14,
+        minHeight: 0,
       }}>
         {messages.length === 0 && (
-          <p style={{ color: '#94a3b8', fontSize: 14, textAlign: 'center', marginTop: 40 }}>
-            質問を入力してください。
-          </p>
+          <div style={{ textAlign: 'center', marginTop: 60, color: 'var(--gray-400)' }}>
+            <div style={{ fontSize: 36, marginBottom: 10 }}>🧪</div>
+            <p style={{ fontSize: 14 }}>質問を入力してください。</p>
+          </div>
         )}
         {messages.map((msg, i) => (
           <div key={i} style={{
@@ -67,31 +71,31 @@ export default function TestChatPage() {
             justifyContent: msg.role === 'user' ? 'flex-end' : 'flex-start',
           }}>
             <div style={{
-              maxWidth: '70%',
-              background: msg.role === 'user' ? '#2563eb' : '#fff',
-              color: msg.role === 'user' ? '#fff' : '#1e293b',
-              border: msg.role === 'assistant' ? '1px solid #e2e8f0' : 'none',
+              maxWidth: '72%',
+              background: msg.role === 'user' ? 'var(--brand)' : 'var(--gray-50)',
+              color: msg.role === 'user' ? '#fff' : 'var(--gray-800)',
+              border: msg.role === 'assistant' ? '1px solid var(--gray-200)' : 'none',
               borderRadius: msg.role === 'user' ? '12px 4px 12px 12px' : '4px 12px 12px 12px',
-              padding: '10px 14px', fontSize: 14, lineHeight: 1.6,
+              padding: '10px 14px', fontSize: 14, lineHeight: 1.65,
             }}>
               <p style={{ margin: 0, whiteSpace: 'pre-wrap' }}>{msg.content}</p>
               {msg.fallback && (
-                <div style={{ marginTop: 8, paddingTop: 8, borderTop: '1px solid #e2e8f0', fontSize: 12, color: '#64748b' }}>
-                  <span style={{ color: '#f59e0b', fontWeight: 600 }}>⚠ 回答が見つかりませんでした</span>
+                <div style={{ marginTop: 8, paddingTop: 8, borderTop: '1px solid var(--gray-200)', fontSize: 12 }}>
+                  <span style={{ color: 'var(--amber)', fontWeight: 600 }}>⚠ 回答が見つかりませんでした</span>
                   {msg.contact?.url && (
                     <div style={{ marginTop: 4 }}>
-                      <a href={msg.contact.url} target="_blank" rel="noreferrer" style={{ color: '#2563eb' }}>
+                      <a href={msg.contact.url} target="_blank" rel="noreferrer" style={{ color: 'var(--brand)' }}>
                         お問い合わせ →
                       </a>
                     </div>
                   )}
                   {msg.contact?.email && (
-                    <div><a href={`mailto:${msg.contact.email}`} style={{ color: '#2563eb' }}>{msg.contact.email}</a></div>
+                    <div><a href={`mailto:${msg.contact.email}`} style={{ color: 'var(--brand)' }}>{msg.contact.email}</a></div>
                   )}
                 </div>
               )}
               {!msg.fallback && msg.citations && msg.citations.length > 0 && (
-                <div style={{ marginTop: 8, paddingTop: 8, borderTop: '1px solid #e2e8f0', fontSize: 12, color: '#64748b' }}>
+                <div style={{ marginTop: 8, paddingTop: 8, borderTop: '1px solid var(--gray-200)', fontSize: 12, color: 'var(--gray-500)' }}>
                   <span style={{ fontWeight: 600 }}>参照元:</span>
                   {msg.citations.map((c, ci) => (
                     <div key={ci}>{c.source_kind === 'faq' ? '📋 FAQ' : '📄 ドキュメント'}{c.title ? `: ${c.title}` : ''}</div>
@@ -104,8 +108,10 @@ export default function TestChatPage() {
         {sending && (
           <div style={{ display: 'flex' }}>
             <div style={{
-              background: '#fff', border: '1px solid #e2e8f0',
-              borderRadius: '4px 12px 12px 12px', padding: '10px 14px', fontSize: 14, color: '#94a3b8',
+              background: 'var(--gray-50)',
+              border: '1px solid var(--gray-200)',
+              borderRadius: '4px 12px 12px 12px',
+              padding: '10px 14px', fontSize: 14, color: 'var(--gray-400)',
             }}>
               回答中...
             </div>
@@ -122,19 +128,19 @@ export default function TestChatPage() {
           onChange={e => setInput(e.target.value)}
           onKeyDown={handleKeyDown}
           placeholder="質問を入力... (Enter で送信)"
-          style={{
-            flex: 1, border: '1px solid #e2e8f0', borderRadius: 8,
-            padding: '10px 12px', fontSize: 14, resize: 'none',
-          }}
+          className="form-textarea"
+          style={{ flex: 1, resize: 'none' }}
         />
-        <button onClick={send} disabled={sending || !input.trim()} style={{
-          padding: '0 20px', background: '#2563eb', color: '#fff',
-          border: 'none', borderRadius: 8, cursor: 'pointer', fontSize: 14,
-          opacity: sending || !input.trim() ? 0.5 : 1,
-        }}>
+        <button
+          onClick={send}
+          disabled={sending || !input.trim()}
+          className="btn btn-primary"
+          style={{ alignSelf: 'stretch', paddingLeft: 24, paddingRight: 24 }}
+        >
           送信
         </button>
       </div>
     </div>
   )
 }
+

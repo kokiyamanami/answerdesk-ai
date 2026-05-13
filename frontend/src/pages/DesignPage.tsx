@@ -41,9 +41,9 @@ export default function DesignPage() {
         <p className="page-desc">チャット画面のテーマと表示内容を設定します。</p>
       </div>
 
-      <div style={{ display: 'flex', gap: 28, alignItems: 'flex-start' }}>
+      <div style={{ display: 'flex', gap: 28, alignItems: 'flex-start', flexWrap: 'wrap' }}>
         {/* ---- Form ---- */}
-        <div style={{ flex: 1, minWidth: 0 }}>
+        <div style={{ flex: '1 1 360px', minWidth: 0 }}>
           <div className="card">
             {/* Theme selector */}
             <div className="form-field">
@@ -112,7 +112,7 @@ export default function DesignPage() {
         </div>
 
         {/* ---- Preview ---- */}
-        <div style={{ width: 300, flexShrink: 0 }}>
+        <div style={{ width: 300, flexShrink: 0, flexBasis: 300 }}>
           <p style={{ fontSize: 12, fontWeight: 700, letterSpacing: '0.5px', textTransform: 'uppercase', color: 'var(--gray-400)', marginBottom: 10 }}>
             プレビュー
           </p>

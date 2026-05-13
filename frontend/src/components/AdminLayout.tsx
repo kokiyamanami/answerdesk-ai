@@ -1,3 +1,4 @@
+import { useState } from 'react'
 import { NavLink, Outlet } from 'react-router-dom'
 import { logout } from '../lib/apiClient'
 import { useAuth } from '../contexts/AuthContext'
@@ -6,15 +7,16 @@ import '../admin.css'
 const NAV_ITEMS = [
   { to: '/app/bot',           icon: '🤖', label: 'ボット設定' },
   { to: '/app/design',        icon: '🎨', label: 'デザイン' },
-  { to: '/app/contact',       icon: '📬', label: '問い合わせ設定' },
+  { to: '/app/contact',       icon: '📬', label: '問い合わせ' },
   { to: '/app/faqs',          icon: '💬', label: 'FAQ' },
   { to: '/app/documents',     icon: '📄', label: 'ドキュメント' },
-  { to: '/app/test-chat',     icon: '🧪', label: 'テストチャット' },
+  { to: '/app/test-chat',     icon: '🧪', label: 'テスト' },
   { to: '/app/conversations', icon: '🗂️', label: '会話ログ' },
 ]
 
 export default function AdminLayout() {
   const { user } = useAuth()
+  const [menuOpen, setMenuOpen] = useState(false)
 
   const handleLogout = async () => {
     await logout()
@@ -25,7 +27,21 @@ export default function AdminLayout() {
 
   return (
     <div className="admin-layout">
-      <aside className="admin-sidebar">
+      {/* ---- Mobile header ---- */}
+      <header className="mobile-header">
+        <button className="hamburger" onClick={() => setMenuOpen(o => !o)} aria-label="メニュー">
+          <span className={`hamburger-line${menuOpen ? ' open' : ''}`} />
+          <span className={`hamburger-line${menuOpen ? ' open' : ''}`} />
+          <span className={`hamburger-line${menuOpen ? ' open' : ''}`} />
+        </button>
+        <span className="mobile-header-title">AnswerDesk AI</span>
+      </header>
+
+      {/* ---- Overlay (mobile) ---- */}
+      {menuOpen && <div className="sidebar-overlay" onClick={() => setMenuOpen(false)} />}
+
+      {/* ---- Sidebar ---- */}
+      <aside className={`admin-sidebar${menuOpen ? ' sidebar-open' : ''}`}>
         <div className="sidebar-logo">
           <div className="sidebar-logo-icon">✦</div>
           <span className="sidebar-logo-text">AnswerDesk AI</span>
@@ -37,6 +53,7 @@ export default function AdminLayout() {
             <NavLink
               key={item.to}
               to={item.to}
+              onClick={() => setMenuOpen(false)}
               className={({ isActive }) => `sidebar-link${isActive ? ' active' : ''}`}
             >
               <span className="nav-icon">{item.icon}</span>
@@ -55,6 +72,20 @@ export default function AdminLayout() {
           </button>
         </div>
       </aside>
+
+      {/* ---- Bottom nav (mobile) ---- */}
+      <nav className="bottom-nav">
+        {NAV_ITEMS.map(item => (
+          <NavLink
+            key={item.to}
+            to={item.to}
+            className={({ isActive }) => `bottom-nav-item${isActive ? ' active' : ''}`}
+          >
+            <span className="bottom-nav-icon">{item.icon}</span>
+            <span className="bottom-nav-label">{item.label}</span>
+          </NavLink>
+        ))}
+      </nav>
 
       <main className="admin-main">
         <Outlet />
