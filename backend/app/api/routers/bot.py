@@ -1,0 +1,161 @@
+import re
+import uuid
+
+from fastapi import APIRouter, Depends, HTTPException, Query, status
+from pydantic import BaseModel, field_validator
+from sqlalchemy.orm import Session
+from typing import Optional
+
+from app.api.deps import get_current_user
+from app.db.session import get_db
+from app.models.bot import Bot
+from app.models.user import User
+
+router = APIRouter(prefix="/bot", tags=["bot"])
+
+SLUG_PATTERN = re.compile(r'^[a-z0-9](?:[a-z0-9-]{1,48}[a-z0-9])?$')
+
+
+class BotResponse(BaseModel):
+    id: str
+    name: str
+    public_slug: str
+    is_public: bool
+    chat_title: str
+    icon_url: Optional[str]
+    welcome_message: Optional[str]
+    theme_preset_id: Optional[str]
+    fallback_enabled: bool
+    fallback_message: str
+    fallback_contact_url: Optional[str]
+    fallback_contact_email: Optional[str]
+    status: str
+
+    model_config = {"from_attributes": True}
+
+
+class BotCreateRequest(BaseModel):
+    name: str
+    chat_title: str
+    public_slug: str
+
+    @field_validator("public_slug")
+    @classmethod
+    def validate_slug(cls, v: str) -> str:
+        if not SLUG_PATTERN.match(v):
+            raise ValueError("slugは半角小文字英数字とハイフンのみ、3〜50文字、先頭末尾はハイフン不可です。")
+        return v
+
+
+class BotUpdateRequest(BaseModel):
+    name: Optional[str] = None
+    chat_title: Optional[str] = None
+    public_slug: Optional[str] = None
+    is_public: Optional[bool] = None
+    icon_url: Optional[str] = None
+    welcome_message: Optional[str] = None
+    theme_preset_id: Optional[str] = None
+    fallback_enabled: Optional[bool] = None
+    fallback_message: Optional[str] = None
+    fallback_contact_url: Optional[str] = None
+    fallback_contact_email: Optional[str] = None
+
+    @field_validator("public_slug")
+    @classmethod
+    def validate_slug(cls, v: Optional[str]) -> Optional[str]:
+        if v is not None and not SLUG_PATTERN.match(v):
+            raise ValueError("slugは半角小文字英数字とハイフンのみ、3〜50文字、先頭末尾はハイフン不可です。")
+        return v
+
+
+class SlugCheckResponse(BaseModel):
+    value: str
+    available: bool
+
+
+def _bot_to_response(bot: Bot) -> BotResponse:
+    return BotResponse(
+        id=str(bot.id),
+        name=bot.name,
+        public_slug=bot.public_slug,
+        is_public=bot.is_public,
+        chat_title=bot.chat_title,
+        icon_url=bot.icon_url,
+        welcome_message=bot.welcome_message,
+        theme_preset_id=str(bot.theme_preset_id) if bot.theme_preset_id else None,
+        fallback_enabled=bot.fallback_enabled,
+        fallback_message=bot.fallback_message,
+        fallback_contact_url=bot.fallback_contact_url,
+        fallback_contact_email=bot.fallback_contact_email,
+        status=bot.status,
+    )
+
+
+@router.get("", response_model=BotResponse)
+def get_bot(current_user: User = Depends(get_current_user), db: Session = Depends(get_db)):
+    bot = db.query(Bot).filter(Bot.user_id == current_user.id).first()
+    if not bot:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND,
+                            detail={"code": "bot_not_found", "message": "ボットが見つかりません。"})
+    return _bot_to_response(bot)
+
+
+@router.post("", response_model=BotResponse, status_code=status.HTTP_201_CREATED)
+def create_bot(body: BotCreateRequest, current_user: User = Depends(get_current_user), db: Session = Depends(get_db)):
+    if db.query(Bot).filter(Bot.user_id == current_user.id).first():
+        raise HTTPException(status_code=status.HTTP_409_CONFLICT,
+                            detail={"code": "bot_already_exists", "message": "ボットはすでに作成されています。"})
+    if db.query(Bot).filter(Bot.public_slug == body.public_slug).first():
+        raise HTTPException(status_code=status.HTTP_409_CONFLICT,
+                            detail={"code": "slug_already_taken", "message": "このURLはすでに使用されています。"})
+    bot = Bot(
+        user_id=current_user.id,
+        name=body.name,
+        chat_title=body.chat_title,
+        public_slug=body.public_slug,
+        fallback_message="申し訳ありませんが、お答えできませんでした。お問い合わせください。",
+    )
+    db.add(bot)
+    db.commit()
+    db.refresh(bot)
+    return _bot_to_response(bot)
+
+
+@router.patch("", response_model=BotResponse)
+def update_bot(body: BotUpdateRequest, current_user: User = Depends(get_current_user), db: Session = Depends(get_db)):
+    bot = db.query(Bot).filter(Bot.user_id == current_user.id).first()
+    if not bot:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND,
+                            detail={"code": "bot_not_found", "message": "ボットが見つかりません。"})
+
+    if body.public_slug and body.public_slug != bot.public_slug:
+        if db.query(Bot).filter(Bot.public_slug == body.public_slug, Bot.id != bot.id).first():
+            raise HTTPException(status_code=status.HTTP_409_CONFLICT,
+                                detail={"code": "slug_already_taken", "message": "このURLはすでに使用されています。"})
+
+    update_data = body.model_dump(exclude_none=True)
+    if "theme_preset_id" in update_data:
+        update_data["theme_preset_id"] = uuid.UUID(update_data["theme_preset_id"]) if update_data["theme_preset_id"] else None
+
+    for key, value in update_data.items():
+        setattr(bot, key, value)
+
+    db.commit()
+    db.refresh(bot)
+    return _bot_to_response(bot)
+
+
+@router.get("/slug/check", response_model=SlugCheckResponse)
+def check_slug(
+    value: str = Query(..., min_length=3, max_length=50),
+    current_user: User = Depends(get_current_user),
+    db: Session = Depends(get_db),
+):
+    if not SLUG_PATTERN.match(value):
+        return SlugCheckResponse(value=value, available=False)
+    # 自分のbotの現在のslugは「使用可能」とみなす
+    my_bot = db.query(Bot).filter(Bot.user_id == current_user.id).first()
+    if my_bot and my_bot.public_slug == value:
+        return SlugCheckResponse(value=value, available=True)
+    exists = db.query(Bot).filter(Bot.public_slug == value).first()
+    return SlugCheckResponse(value=value, available=not bool(exists))
