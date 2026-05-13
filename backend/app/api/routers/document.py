@@ -29,6 +29,7 @@ class DocumentResponse(BaseModel):
     file_size_bytes: int
     status: str
     error_message: Optional[str]
+    created_at: str
 
     model_config = {"from_attributes": True}
 
@@ -49,6 +50,7 @@ def _doc_to_response(doc: Document) -> DocumentResponse:
         file_size_bytes=doc.file_size_bytes,
         status=doc.status,
         error_message=doc.error_message,
+        created_at=doc.created_at.isoformat() + 'Z',
     )
 
 

@@ -65,7 +65,6 @@ export default function DocumentPage() {
               <tr>
                 <th>ファイル名</th>
                 <th style={{ width: 130 }}>ステータス</th>
-                <th style={{ width: 90 }}>チャンク数</th>
                 <th style={{ width: 120 }}>アップロード日</th>
                 <th style={{ width: 80 }}></th>
               </tr>
@@ -77,7 +76,6 @@ export default function DocumentPage() {
                   <tr key={doc.id}>
                     <td style={{ fontWeight: 500 }}>📄 {doc.file_name}</td>
                     <td><span className={`badge ${s.cls}`}>{s.label}</span></td>
-                    <td style={{ color: 'var(--gray-500)' }}>{doc.chunk_count ?? '—'}</td>
                     <td style={{ color: 'var(--gray-500)' }}>{new Date(doc.created_at).toLocaleDateString('ja-JP')}</td>
                     <td><button className="btn btn-danger btn-sm" onClick={() => handleDelete(doc.id)}>削除</button></td>
                   </tr>

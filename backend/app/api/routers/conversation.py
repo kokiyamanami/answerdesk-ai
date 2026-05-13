@@ -54,8 +54,8 @@ def list_conversations(
 
         result.append(ConversationSummaryResponse(
             id=str(conv.id),
-            started_at=conv.started_at.isoformat(),
-            last_message_at=conv.last_message_at.isoformat(),
+            started_at=conv.started_at.isoformat() + 'Z',
+            last_message_at=conv.last_message_at.isoformat() + 'Z',
             latest_user_message=latest_user,
             latest_assistant_message=latest_ai,
             fallback_triggered=fallback,

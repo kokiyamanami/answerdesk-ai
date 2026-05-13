@@ -53,7 +53,6 @@ export interface Document {
   file_size_bytes: number
   status: 'uploaded' | 'processing' | 'processed' | 'failed'
   error_message: string | null
-  chunk_count: number | null
   created_at: string
 }
 
