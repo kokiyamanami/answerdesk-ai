@@ -2,6 +2,7 @@ import { useEffect, useState, useRef } from 'react'
 import { fetchBot, createBot, updateBot, checkSlug } from '../lib/apiClient'
 import type { Bot } from '../types/api'
 import UpgradeModal from '../components/UpgradeModal'
+import { INDUSTRIES } from '../data/faqTemplates'
 
 const BASE_URL = window.location.origin + '/c/'
 
@@ -127,6 +128,37 @@ export default function BotPage() {
               {form.is_public ? '公開中' : '非公開'}
             </span>
           </div>
+        </div>
+      </div>
+
+      {/* 業界設定 */}
+      <div className="card" style={{ marginTop: 24 }}>
+        <h2 style={{ fontSize: 15, fontWeight: 700, marginBottom: 4, color: 'var(--gray-800)' }}>業界</h2>
+        <p style={{ fontSize: 13, color: 'var(--gray-500)', marginBottom: 16 }}>
+          業界を選択するとFAQ管理画面でテンプレートを利用できます。
+        </p>
+        <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap' }}>
+          {INDUSTRIES.map(ind => {
+            const selected = form.industry === ind.value
+            return (
+              <div
+                key={ind.value}
+                onClick={() => setForm(f => ({ ...f, industry: selected ? null : ind.value }))}
+                style={{
+                  border: selected ? '2px solid var(--brand)' : '2px solid var(--gray-200)',
+                  borderRadius: 10, padding: '8px 14px',
+                  cursor: 'pointer', display: 'flex', alignItems: 'center', gap: 6,
+                  background: selected ? '#eef2ff' : '#fff',
+                  transition: 'all 0.15s',
+                }}
+              >
+                <span style={{ fontSize: 16 }}>{ind.icon}</span>
+                <span style={{ fontSize: 13, fontWeight: selected ? 700 : 400, color: selected ? 'var(--brand)' : 'var(--gray-700)' }}>
+                  {ind.label}
+                </span>
+              </div>
+            )
+          })}
         </div>
       </div>
 

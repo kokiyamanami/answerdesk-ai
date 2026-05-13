@@ -1,15 +1,113 @@
 import { useEffect, useState } from 'react'
 import { useNavigate, useParams } from 'react-router-dom'
-import { fetchFaqs, createFaq, updateFaq, deleteFaq } from '../lib/apiClient'
+import { fetchFaqs, createFaq, updateFaq, deleteFaq, fetchBot } from '../lib/apiClient'
 import type { FAQ } from '../types/api'
+import { INDUSTRIES, FAQ_TEMPLATES, type FAQTemplate } from '../data/faqTemplates'
+
+function TemplateModal({ industry, onClose, onAdd }: {
+  industry: string
+  onClose: () => void
+  onAdd: (selected: FAQTemplate[]) => Promise<void>
+}) {
+  const templates = FAQ_TEMPLATES[industry] ?? []
+  const industryLabel = INDUSTRIES.find(i => i.value === industry)?.label ?? industry
+  const [checked, setChecked] = useState<boolean[]>(templates.map(() => false))
+  const [adding, setAdding] = useState(false)
+
+  const toggle = (i: number) => setChecked(c => c.map((v, j) => j === i ? !v : v))
+  const toggleAll = () => {
+    const allOn = checked.every(Boolean)
+    setChecked(templates.map(() => !allOn))
+  }
+  const selectedItems = templates.filter((_, i) => checked[i])
+
+  const handleAdd = async () => {
+    setAdding(true)
+    await onAdd(selectedItems)
+    setAdding(false)
+    onClose()
+  }
+
+  useEffect(() => {
+    const handler = (e: KeyboardEvent) => { if (e.key === 'Escape') onClose() }
+    window.addEventListener('keydown', handler)
+    return () => window.removeEventListener('keydown', handler)
+  }, [onClose])
+
+  return (
+    <div onClick={onClose} style={{
+      position: 'fixed', inset: 0, zIndex: 1000,
+      background: 'rgba(0,0,0,0.45)',
+      display: 'flex', alignItems: 'center', justifyContent: 'center', padding: 16,
+    }}>
+      <div onClick={e => e.stopPropagation()} style={{
+        background: '#fff', borderRadius: 16,
+        width: '100%', maxWidth: 560,
+        boxShadow: '0 20px 60px rgba(0,0,0,.2)',
+        display: 'flex', flexDirection: 'column', maxHeight: '80vh',
+      }}>
+        <div style={{ padding: '24px 28px 16px', borderBottom: '1px solid var(--gray-100)' }}>
+          <h2 style={{ fontSize: 16, fontWeight: 800, color: 'var(--gray-900)', marginBottom: 4 }}>
+            {industryLabel}のFAQテンプレート
+          </h2>
+          <p style={{ fontSize: 13, color: 'var(--gray-500)' }}>追加したいFAQを選択してください。</p>
+        </div>
+
+        <div style={{ padding: '12px 28px', borderBottom: '1px solid var(--gray-100)' }}>
+          <label style={{ display: 'flex', alignItems: 'center', gap: 8, cursor: 'pointer', fontSize: 13, color: 'var(--gray-600)' }}>
+            <input type="checkbox" checked={checked.every(Boolean)} onChange={toggleAll} />
+            すべて選択
+          </label>
+        </div>
+
+        <div style={{ overflowY: 'auto', flex: 1 }}>
+          {templates.map((t, i) => (
+            <label key={i} style={{
+              display: 'flex', alignItems: 'flex-start', gap: 12,
+              padding: '14px 28px', borderBottom: '1px solid var(--gray-50)',
+              cursor: 'pointer',
+              background: checked[i] ? '#f5f7ff' : '#fff',
+            }}>
+              <input type="checkbox" checked={checked[i]} onChange={() => toggle(i)} style={{ marginTop: 3, flexShrink: 0 }} />
+              <div>
+                <div style={{ fontSize: 13, fontWeight: 600, color: 'var(--gray-800)', marginBottom: 3 }}>{t.question}</div>
+                <div style={{ fontSize: 12, color: 'var(--gray-500)', lineHeight: 1.6 }}>{t.answer}</div>
+                <span style={{ fontSize: 11, color: 'var(--brand)', marginTop: 4, display: 'inline-block' }}>{t.category}</span>
+              </div>
+            </label>
+          ))}
+        </div>
+
+        <div style={{ padding: '16px 28px', borderTop: '1px solid var(--gray-100)', display: 'flex', gap: 10, justifyContent: 'flex-end' }}>
+          <button className="btn btn-secondary" onClick={onClose}>キャンセル</button>
+          <button
+            className="btn btn-primary"
+            onClick={handleAdd}
+            disabled={selectedItems.length === 0 || adding}
+          >
+            {adding ? '追加中...' : `${selectedItems.length}件を追加`}
+          </button>
+        </div>
+      </div>
+    </div>
+  )
+}
 
 export default function FAQPage() {
   const [faqs, setFaqs] = useState<FAQ[]>([])
   const [loading, setLoading] = useState(true)
+  const [industry, setIndustry] = useState<string | null>(null)
+  const [showTemplate, setShowTemplate] = useState(false)
   const navigate = useNavigate()
 
   useEffect(() => {
-    fetchFaqs().then(res => setFaqs(res)).catch(() => {}).finally(() => setLoading(false))
+    Promise.all([
+      fetchFaqs().catch(() => [] as FAQ[]),
+      fetchBot().catch(() => null),
+    ]).then(([faqs, bot]) => {
+      setFaqs(faqs)
+      setIndustry(bot?.industry ?? null)
+    }).finally(() => setLoading(false))
   }, [])
 
   const handleDelete = async (id: string) => {
@@ -18,14 +116,36 @@ export default function FAQPage() {
     setFaqs(f => f.filter(x => x.id !== id))
   }
 
+  const handleAddTemplates = async (selected: import('../data/faqTemplates').FAQTemplate[]) => {
+    const created = await Promise.all(
+      selected.map(t => createFaq({ question: t.question, answer: t.answer, category: t.category }))
+    )
+    setFaqs(f => [...f, ...created])
+  }
+
   return (
-    <div>
+    <>
+      {showTemplate && industry && (
+        <TemplateModal
+          industry={industry}
+          onClose={() => setShowTemplate(false)}
+          onAdd={handleAddTemplates}
+        />
+      )}
+      <div>
       <div className="page-header" style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between' }}>
         <div>
           <h1 className="page-title">FAQ管理</h1>
           <p className="page-desc">よくある質問と回答を管理します。</p>
         </div>
-        <button className="btn btn-primary" onClick={() => navigate('/app/faqs/new')}>＋ 新規追加</button>
+        <div style={{ display: 'flex', gap: 8 }}>
+          {industry && (
+            <button className="btn btn-secondary" onClick={() => setShowTemplate(true)}>
+              📋 テンプレートから追加
+            </button>
+          )}
+          <button className="btn btn-primary" onClick={() => navigate('/app/faqs/new')}>＋ 新規追加</button>
+        </div>
       </div>
 
       <div className="card" style={{ padding: 0 }}>
@@ -63,6 +183,7 @@ export default function FAQPage() {
         )}
       </div>
     </div>
+    </>
   )
 }
 

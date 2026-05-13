@@ -21,6 +21,7 @@ export interface Bot {
   status: string
   rag_score_threshold: number
   ai_model: string
+  industry: string | null
 }
 
 export interface ThemePreset {
