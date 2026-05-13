@@ -14,9 +14,8 @@ export default function LoginPage() {
     try {
       await api.post('/auth/login', { email, password })
       window.location.href = '/app/bot'
-    } catch (err: any) {
-      const msg = err.response?.data?.detail?.message ?? 'ログインに失敗しました。'
-      setError(msg)
+    } catch {
+      setError('ログインに失敗しました。')
     } finally {
       setLoading(false)
     }
