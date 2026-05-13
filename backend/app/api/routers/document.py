@@ -1,4 +1,5 @@
 import json
+import os
 import uuid
 
 import boto3
@@ -80,24 +81,31 @@ async def upload_document(
 
     bot = _get_bot_or_404(current_user, db)
 
-    # S3 へ保存
+    # ストレージへ保存
     doc_id = uuid.uuid4()
     s3_key = f"documents/{bot.id}/{doc_id}/{file.filename}"
-    storage_url = f"s3://{settings.s3_bucket_name}/{s3_key}"
 
-    try:
-        s3 = boto3.client("s3", region_name=settings.aws_region)
-        s3.put_object(
-            Bucket=settings.s3_bucket_name,
-            Key=s3_key,
-            Body=content,
-            ContentType=file.content_type,
-        )
-    except Exception as e:
-        raise HTTPException(
-            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-            detail={"code": "upload_failed", "message": "ファイルのアップロードに失敗しました。"},
-        )
+    if settings.app_env != "prod":
+        save_dir = f"/tmp/answerdesk_uploads/documents/{bot.id}/{doc_id}"
+        os.makedirs(save_dir, exist_ok=True)
+        with open(f"{save_dir}/{file.filename}", "wb") as f:
+            f.write(content)
+        storage_url = f"/uploads/documents/{bot.id}/{doc_id}/{file.filename}"
+    else:
+        storage_url = f"s3://{settings.s3_bucket_name}/{s3_key}"
+        try:
+            s3 = boto3.client("s3", region_name=settings.aws_region)
+            s3.put_object(
+                Bucket=settings.s3_bucket_name,
+                Key=s3_key,
+                Body=content,
+                ContentType=file.content_type,
+            )
+        except Exception:
+            raise HTTPException(
+                status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+                detail={"code": "upload_failed", "message": "ファイルのアップロードに失敗しました。"},
+            )
 
     # documents レコード作成
     doc = Document(

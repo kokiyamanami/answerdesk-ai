@@ -14,11 +14,23 @@ CHUNK_OVERLAP_CHARS = 100
 
 def extract_chunks_from_pdf(storage_url: str, file_name: str) -> list[dict[str, Any]]:
     """
-    S3 から PDF を取得してチャンクリストを返す。
+    S3 または ローカルファイルから PDF を取得してチャンクリストを返す。
     各チャンク: {"content": str, "title": str | None, "metadata": dict}
     """
-    pdf_bytes = _download_from_s3(storage_url)
+    pdf_bytes = _download_pdf(storage_url)
     return _extract_chunks(pdf_bytes, file_name)
+
+
+def _download_pdf(storage_url: str) -> bytes:
+    if storage_url.startswith("s3://"):
+        return _download_from_s3(storage_url)
+    elif storage_url.startswith("/uploads/"):
+        # dev: /tmp/answerdesk_uploads/ 配下に保存されている
+        local_path = "/tmp/answerdesk_uploads" + storage_url[len("/uploads"):]
+        with open(local_path, "rb") as f:
+            return f.read()
+    else:
+        raise ValueError(f"Unsupported storage_url format: {storage_url}")
 
 
 def _download_from_s3(storage_url: str) -> bytes:
