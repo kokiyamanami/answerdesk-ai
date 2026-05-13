@@ -3,7 +3,7 @@ import os
 import uuid
 
 import boto3
-from fastapi import APIRouter, Depends, File, HTTPException, UploadFile, status
+from fastapi import APIRouter, BackgroundTasks, Depends, File, HTTPException, UploadFile, status
 from pydantic import BaseModel
 from sqlalchemy.orm import Session
 from typing import Optional
@@ -61,6 +61,7 @@ def list_documents(current_user: User = Depends(get_current_user), db: Session =
 
 @router.post("/upload", response_model=DocumentResponse, status_code=status.HTTP_201_CREATED)
 async def upload_document(
+    background_tasks: BackgroundTasks,
     file: UploadFile = File(...),
     current_user: User = Depends(get_current_user),
     db: Session = Depends(get_db),
@@ -122,14 +123,12 @@ async def upload_document(
     db.commit()
     db.refresh(doc)
 
-    # SQS へジョブ投入（dev環境でSQS未設定の場合は同期で直接実行）
+    # SQS へジョブ投入（dev環境でSQS未設定の場合はBackgroundTasksで実行）
     if settings.sqs_queue_url:
         _enqueue_process_document(str(doc.id))
     else:
-        import threading
         from app.worker.jobs.process_document import process_document
-        t = threading.Thread(target=process_document, args=(str(doc.id),), daemon=True)
-        t.start()
+        background_tasks.add_task(process_document, str(doc.id))
 
     return _doc_to_response(doc)
 
