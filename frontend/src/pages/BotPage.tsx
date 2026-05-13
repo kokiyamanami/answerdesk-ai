@@ -1,6 +1,7 @@
 import { useEffect, useState, useRef } from 'react'
 import { fetchBot, createBot, updateBot, checkSlug } from '../lib/apiClient'
 import type { Bot } from '../types/api'
+import UpgradeModal from '../components/UpgradeModal'
 
 const BASE_URL = window.location.origin + '/c/'
 
@@ -11,6 +12,7 @@ export default function BotPage() {
   const [saving, setSaving] = useState(false)
   const [alert, setAlert] = useState<{ type: 'success' | 'error'; msg: string } | null>(null)
   const [copied, setCopied] = useState(false)
+  const [showUpgradeModal, setShowUpgradeModal] = useState(false)
   const slugTimer = useRef<ReturnType<typeof setTimeout> | null>(null)
 
   useEffect(() => {
@@ -55,7 +57,9 @@ export default function BotPage() {
   const publicUrl = `${BASE_URL}${form.public_slug || ''}`
 
   return (
-    <div>
+    <>
+      {showUpgradeModal && <UpgradeModal onClose={() => setShowUpgradeModal(false)} />}
+      <div>
       <div className="page-header">
         <h1 className="page-title">ボット設定</h1>
         <p className="page-desc">チャットボットの基本情報を設定します。</p>
@@ -143,7 +147,7 @@ export default function BotPage() {
             return (
               <div
                 key={m.value}
-                onClick={() => !m.paid && setForm(f => ({ ...f, ai_model: m.value }))}
+                onClick={() => m.paid ? setShowUpgradeModal(true) : setForm(f => ({ ...f, ai_model: m.value }))}
                 style={{
                   border: selected ? '2px solid var(--brand)' : '2px solid var(--gray-200)',
                   borderRadius: 10, padding: '12px 16px', minWidth: 130,
@@ -216,5 +220,6 @@ export default function BotPage() {
         </button>
       </div>
     </div>
+    </>
   )
 }
