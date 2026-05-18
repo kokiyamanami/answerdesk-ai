@@ -35,6 +35,25 @@ FALLBACK_JUDGMENT_PROMPT = """以下の参考情報をもとに質問に答え�
 質問: {question}
 """
 
+INTENT_PROMPT = """以下のメッセージの意図を分類してください。
+以下のいずれか1単語のみ答えてください：
+- greeting: 挨拶・雑談（「こんにちは」「hi」「やあ」等）
+- thanks: 感謝・お礼（「ありがとう」「助かりました」等）
+- farewell: 別れ・終了（「さようなら」「bye」「またね」等）
+- complaint: 苦情・怒り（「最悪」「ひどい」「ふざけるな」等）
+- gibberish: 意味不明・テスト入力（「aaa」「テスト」「123」等）
+- question: 質問・問い合わせ
+
+メッセージ: {message}
+"""
+
+_INTENT_RESPONSES = {
+    "greeting": "こんにちは！何かご質問があればお気軽にどうぞ。",
+    "thanks": "お役に立てて嬉しいです！他にご質問はございますか？",
+    "farewell": "ありがとうございました。またいつでもお気軽にお声がけください！",
+    "gibberish": "もう少し詳しく教えていただけますか？",
+}
+
 
 def answer_question(
     bot: Bot,
@@ -45,26 +64,33 @@ def answer_question(
     RAG で質問に回答する。
     返り値: {answer, fallback, citations, retrieval_score}
     """
-    # 1. 質問の Embedding 生成
+    # 1. 意図分類（挨拶・感謝・別れ・クレーム・意味不明はRAGをスキップ）
+    model = bot.ai_model or settings.openai_chat_model
+    intent = _classify_intent(question=question, model=model)
+    if intent == "complaint":
+        return _make_fallback(bot)
+    if intent in _INTENT_RESPONSES:
+        return {"answer": _INTENT_RESPONSES[intent], "fallback": False, "citations": [], "retrieval_score": None}
+
+    # 2. 質問の Embedding 生成
     q_embedding = generate_embedding(question)
 
-    # 2. pgvector 類似検索
+    # 3. pgvector 類似検索
     chunks = _vector_search(bot_id=bot.id, embedding=q_embedding, db=db)
 
-    # 3. 未ヒット判定（スコア閾値）
+    # 4. 未ヒット判定（スコア閾値）
     threshold = bot.rag_score_threshold if bot.rag_score_threshold is not None else settings.rag_score_threshold
     if not chunks or chunks[0]["score"] < threshold:
         return _make_fallback(bot)
 
-    # 4. コンテキスト組み立て
+    # 5. コンテキスト組み立て
     context = _build_context(chunks)
 
-    # 5. LLM で未ヒット判定
-    model = bot.ai_model or settings.openai_chat_model
+    # 6. LLM で未ヒット判定
     if _is_fallback_by_llm(context=context, question=question, model=model):
         return _make_fallback(bot)
 
-    # 6. 回答生成
+    # 7. 回答生成
     answer = _generate_answer(context=context, question=question, model=model)
 
     return {
@@ -74,6 +100,24 @@ def answer_question(
                         "score": c["score"]} for c in chunks],
         "retrieval_score": chunks[0]["score"],
     }
+
+
+def _classify_intent(question: str, model: str) -> str:
+    client = OpenAI(api_key=settings.openai_api_key, timeout=settings.openai_request_timeout_seconds)
+    prompt = INTENT_PROMPT.format(message=question)
+    try:
+        response = client.chat.completions.create(
+            model=model,
+            messages=[{"role": "user", "content": prompt}],
+            max_tokens=10,
+            temperature=0,
+        )
+        intent = response.choices[0].message.content.strip().lower()
+        valid_intents = {"greeting", "thanks", "farewell", "complaint", "gibberish", "question"}
+        return intent if intent in valid_intents else "question"
+    except Exception:
+        logger.warning("Intent classification failed, falling back to question", exc_info=True)
+        return "question"
 
 
 def _vector_search(bot_id: UUID, embedding: list[float], db: Session) -> list[dict]:
