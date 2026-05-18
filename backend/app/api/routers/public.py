@@ -119,7 +119,7 @@ def send_message(slug: str, body: PublicMessageRequest, db: Session = Depends(ge
                             detail={"code": "conversation_not_found", "message": "会話が見つかりません。"})
 
     try:
-        result = answer_question(bot=bot, question=body.message, db=db)
+        result = answer_question(bot=bot, question=body.message, db=db, conversation=conv)
     except Exception:
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,

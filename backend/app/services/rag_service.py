@@ -59,6 +59,7 @@ def answer_question(
     bot: Bot,
     question: str,
     db: Session,
+    conversation: "Conversation | None" = None,
 ) -> dict[str, Any]:
     """
     RAG で質問に回答する。
@@ -72,26 +73,29 @@ def answer_question(
     if intent in _INTENT_RESPONSES:
         return {"answer": _INTENT_RESPONSES[intent], "fallback": False, "citations": [], "retrieval_score": None}
 
-    # 2. 質問の Embedding 生成
+    # 2. 会話履歴を取得
+    history = _fetch_history(conversation=conversation, db=db) if conversation else []
+
+    # 3. 質問の Embedding 生成
     q_embedding = generate_embedding(question)
 
-    # 3. pgvector 類似検索
+    # 4. pgvector 類似検索
     chunks = _vector_search(bot_id=bot.id, embedding=q_embedding, db=db)
 
-    # 4. 未ヒット判定（スコア閾値）
+    # 5. 未ヒット判定（スコア閾値）
     threshold = bot.rag_score_threshold if bot.rag_score_threshold is not None else settings.rag_score_threshold
     if not chunks or chunks[0]["score"] < threshold:
         return _make_fallback(bot)
 
-    # 5. コンテキスト組み立て
+    # 6. コンテキスト組み立て
     context = _build_context(chunks)
 
-    # 6. LLM で未ヒット判定
+    # 7. LLM で未ヒット判定
     if _is_fallback_by_llm(context=context, question=question, model=model):
         return _make_fallback(bot)
 
-    # 7. 回答生成
-    answer = _generate_answer(context=context, question=question, model=model)
+    # 8. 回答生成
+    answer = _generate_answer(context=context, question=question, model=model, history=history)
 
     return {
         "answer": answer,
@@ -100,6 +104,17 @@ def answer_question(
                         "score": c["score"]} for c in chunks],
         "retrieval_score": chunks[0]["score"],
     }
+
+
+def _fetch_history(conversation: "Conversation", db: Session, limit: int = 6) -> list[dict]:
+    rows = (
+        db.query(Message)
+        .filter(Message.conversation_id == conversation.id)
+        .order_by(Message.created_at.desc())
+        .limit(limit)
+        .all()
+    )
+    return [{"role": r.role, "content": r.content} for r in reversed(rows)]
 
 
 def _classify_intent(question: str, model: str) -> str:
@@ -164,15 +179,16 @@ def _is_fallback_by_llm(context: str, question: str, model: str) -> bool:
     return answer != "YES"
 
 
-def _generate_answer(context: str, question: str, model: str) -> str:
+def _generate_answer(context: str, question: str, model: str, history: list[dict] | None = None) -> str:
     client = OpenAI(api_key=settings.openai_api_key, timeout=settings.openai_request_timeout_seconds)
     system = SYSTEM_PROMPT.format(context=context)
+    messages = [{"role": "system", "content": system}]
+    if history:
+        messages.extend(history)
+    messages.append({"role": "user", "content": question})
     response = client.chat.completions.create(
         model=model,
-        messages=[
-            {"role": "system", "content": system},
-            {"role": "user", "content": question},
-        ],
+        messages=messages,
         temperature=0.2,
     )
     return response.choices[0].message.content.strip()
