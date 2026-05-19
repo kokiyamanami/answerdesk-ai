@@ -3,10 +3,12 @@ import { fetchBot, createBot, updateBot, checkSlug } from '../lib/apiClient'
 import type { Bot } from '../types/api'
 import UpgradeModal from '../components/UpgradeModal'
 import { INDUSTRIES } from '../data/faqTemplates'
+import { useAuth } from '../contexts/AuthContext'
 
 const BASE_URL = window.location.origin + '/c/'
 
 export default function BotPage() {
+  const { refetchBot } = useAuth()
   const [bot, setBot] = useState<Bot | null>(null)
   const [form, setForm] = useState<Partial<Bot>>({})
   const [slugStatus, setSlugStatus] = useState<'ok' | 'taken' | null>(null)
@@ -39,6 +41,7 @@ export default function BotPage() {
       if (!bot) {
         const created = await createBot({ chat_title: form.chat_title || 'チャット', public_slug: form.public_slug! })
         setBot(created); setForm(created)
+        refetchBot()
       } else {
         const updated = await updateBot(form)
         setBot(updated); setForm(updated)
