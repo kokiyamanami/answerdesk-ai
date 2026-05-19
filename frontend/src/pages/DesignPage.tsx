@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState } from 'react'
-import { fetchBot, updateBot, fetchThemes, uploadBotIcon } from '../lib/apiClient'
+import { fetchBot, updateBot, fetchThemes, uploadBotIcon, extractApiError } from '../lib/apiClient'
 import type { Bot, ThemePreset } from '../types/api'
 import UpgradeModal from '../components/UpgradeModal'
 
@@ -33,8 +33,8 @@ export default function DesignPage() {
       })
       setBot(updated); setForm(updated)
       setAlert({ type: 'success', msg: '保存しました。' })
-    } catch {
-      setAlert({ type: 'error', msg: '保存に失敗しました。' })
+    } catch (err) {
+      setAlert({ type: 'error', msg: extractApiError(err, '保存に失敗しました。') })
     } finally { setSaving(false) }
   }
 
@@ -46,8 +46,8 @@ export default function DesignPage() {
       const updated = await uploadBotIcon(file)
       setBot(updated); setForm(updated)
       setAlert({ type: 'success', msg: 'アイコンを更新しました。' })
-    } catch {
-      setAlert({ type: 'error', msg: 'アイコンのアップロードに失敗しました。' })
+    } catch (err) {
+      setAlert({ type: 'error', msg: extractApiError(err, 'アイコンのアップロードに失敗しました。') })
     } finally {
       setIconUploading(false)
       if (iconInputRef.current) iconInputRef.current.value = ''

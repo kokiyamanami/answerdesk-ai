@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react'
-import { fetchBot, fetchThemes, updateBot } from '../lib/apiClient'
+import { fetchBot, fetchThemes, updateBot, extractApiError } from '../lib/apiClient'
 import type { Bot, ThemePreset } from '../types/api'
 import { FORM_FIELD_DEFS, mergeFormFields, type FormFieldConfig } from '../data/formFields'
 import UpgradeModal from '../components/UpgradeModal'
@@ -37,8 +37,8 @@ export default function ContactPage() {
       setBot(updated); setForm(updated)
       setFormFields(mergeFormFields(updated.form_fields as FormFieldConfig[]))
       setAlert({ type: 'success', msg: '保存しました。' })
-    } catch {
-      setAlert({ type: 'error', msg: '保存に失敗しました。' })
+    } catch (err) {
+      setAlert({ type: 'error', msg: extractApiError(err, '保存に失敗しました。') })
     } finally { setSaving(false) }
   }
 

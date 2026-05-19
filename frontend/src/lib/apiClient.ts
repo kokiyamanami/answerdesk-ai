@@ -1,6 +1,17 @@
 import api from '../lib/api'
 import type { Bot, ThemePreset, FAQ, Document, ConversationSummary, ChatResponse, User, FormSubmission } from '../types/api'
 
+// Extract a human-readable error message from an Axios error.
+// Handles: Pydantic 422 arrays, custom {message:} objects, plain strings.
+export function extractApiError(err: unknown, fallback = '操作に失敗しました。'): string {
+  const detail = (err as { response?: { data?: { detail?: unknown } } })?.response?.data?.detail
+  if (!detail) return fallback
+  if (Array.isArray(detail)) return detail.map((d: { msg?: string }) => d.msg ?? '').filter(Boolean).join(' / ')
+  if (typeof detail === 'object' && detail !== null) return (detail as { message?: string }).message ?? fallback
+  if (typeof detail === 'string') return detail
+  return fallback
+}
+
 // Auth
 export const fetchMe = () => api.get<User>('/auth/me').then(r => r.data)
 export const login = (email: string, password: string) =>

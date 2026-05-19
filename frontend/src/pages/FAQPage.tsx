@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react'
 import { useNavigate, useParams } from 'react-router-dom'
-import { fetchFaqs, createFaq, updateFaq, deleteFaq, fetchBot } from '../lib/apiClient'
+import { fetchFaqs, createFaq, updateFaq, deleteFaq, fetchBot, extractApiError } from '../lib/apiClient'
 import type { FAQ } from '../types/api'
 import { INDUSTRIES, FAQ_TEMPLATES, type FAQTemplate } from '../data/faqTemplates'
 import UpgradeModal from '../components/UpgradeModal'
@@ -229,8 +229,8 @@ export function FAQFormPage() {
         await createFaq({ question: form.question, answer: form.answer, category: form.category || undefined })
       }
       navigate('/app/faqs')
-    } catch {
-      setAlert({ type: 'error', msg: '保存に失敗しました。' })
+    } catch (err) {
+      setAlert({ type: 'error', msg: extractApiError(err, '保存に失敗しました。') })
     } finally { setSaving(false) }
   }
 

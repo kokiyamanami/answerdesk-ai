@@ -1,5 +1,5 @@
 import { useEffect, useState, useRef } from 'react'
-import { fetchBot, createBot, updateBot, checkSlug } from '../lib/apiClient'
+import { fetchBot, createBot, updateBot, checkSlug, extractApiError } from '../lib/apiClient'
 import type { Bot } from '../types/api'
 import UpgradeModal from '../components/UpgradeModal'
 import { INDUSTRIES } from '../data/faqTemplates'
@@ -36,6 +36,16 @@ export default function BotPage() {
   }
 
   const handleSave = async () => {
+    if (!bot) {
+      if (!form.public_slug) {
+        setAlert({ type: 'error', msg: '公開URLスラグを入力してください。' })
+        return
+      }
+      if (slugStatus === 'taken') {
+        setAlert({ type: 'error', msg: 'このURLはすでに使用されています。' })
+        return
+      }
+    }
     setSaving(true); setAlert(null)
     try {
       if (!bot) {
@@ -47,8 +57,8 @@ export default function BotPage() {
         setBot(updated); setForm(updated)
       }
       setAlert({ type: 'success', msg: '保存しました。' })
-    } catch {
-      setAlert({ type: 'error', msg: '保存に失敗しました。' })
+    } catch (err) {
+      setAlert({ type: 'error', msg: extractApiError(err, '保存に失敗しました。') })
     } finally { setSaving(false) }
   }
 

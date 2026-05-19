@@ -1,6 +1,6 @@
 import { useEffect, useState, useRef } from 'react'
 import { useNavigate } from 'react-router-dom'
-import { fetchDocuments, uploadDocument, deleteDocument } from '../lib/apiClient'
+import { fetchDocuments, uploadDocument, deleteDocument, extractApiError } from '../lib/apiClient'
 import type { Document } from '../types/api'
 import UpgradeModal from '../components/UpgradeModal'
 
@@ -104,8 +104,8 @@ export function DocumentUploadPage() {
     try {
       await uploadDocument(file)
       navigate('/app/documents')
-    } catch {
-      setAlert({ type: 'error', msg: 'アップロードに失敗しました。' })
+    } catch (err) {
+      setAlert({ type: 'error', msg: extractApiError(err, 'アップロードに失敗しました。') })
     } finally { setUploading(false) }
   }
 

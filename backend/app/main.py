@@ -1,8 +1,11 @@
 import os
+import logging
 from fastapi import FastAPI, Request
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import JSONResponse
 from fastapi.staticfiles import StaticFiles
+
+logger = logging.getLogger(__name__)
 
 from app.api.router import api_router
 from app.core.config import settings
@@ -31,6 +34,7 @@ if settings.app_env != "prod":
 
 @app.exception_handler(Exception)
 async def generic_exception_handler(request: Request, exc: Exception):
+    logger.exception("Unhandled exception: %s %s", request.method, request.url)
     return JSONResponse(
         status_code=500,
         content={"error": {"code": "internal_error", "message": "予期しないエラーが発生しました。"}},

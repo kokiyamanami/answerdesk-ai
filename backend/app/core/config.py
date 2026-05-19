@@ -44,10 +44,15 @@ class Settings(BaseSettings):
     vector_top_k: int = 5
     rag_score_threshold: float = 0.75
 
+    @field_validator("database_url", "aws_region", "s3_bucket_name", "openai_api_key",
+                     "openai_chat_model", "openai_embedding_model", mode="before")
+    @classmethod
+    def strip_whitespace(cls, v: str) -> str:
+        return v.strip() if isinstance(v, str) else v
+
     @field_validator("database_url")
     @classmethod
     def validate_database_url(cls, v: str) -> str:
-        # Ensure async driver is not accidentally used
         if v.startswith("postgresql+asyncpg"):
             raise ValueError("Use postgresql:// or postgresql+psycopg2:// for sync driver")
         return v

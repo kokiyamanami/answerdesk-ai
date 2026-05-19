@@ -1,8 +1,11 @@
 import os
 import re
 import uuid
+import logging
 
 import boto3
+
+logger = logging.getLogger(__name__)
 from fastapi import APIRouter, Depends, File, HTTPException, Query, UploadFile, status
 from pydantic import BaseModel, field_validator
 from sqlalchemy.orm import Session
@@ -216,7 +219,8 @@ async def upload_icon(
                 Body=contents,
                 ContentType=file.content_type,
             )
-        except Exception:
+        except Exception as e:
+            logger.exception("S3 upload failed: %s", e)
             raise HTTPException(status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
                                 detail={"code": "upload_failed", "message": "アイコンのアップロードに失敗しました。"})
 
