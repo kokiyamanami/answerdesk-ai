@@ -13,7 +13,7 @@ export default function BotPage() {
   const [form, setForm] = useState<Partial<Bot>>({})
   const [slugStatus, setSlugStatus] = useState<'ok' | 'taken' | null>(null)
   const [saving, setSaving] = useState(false)
-  const [alert, setAlert] = useState<{ type: 'success' | 'error'; msg: string } | null>(null)
+  const [alert, setAlert] = useState<{ type: 'success' | 'error'; msg: string; link?: string } | null>(null)
   const [copied, setCopied] = useState(false)
   const [showUpgradeModal, setShowUpgradeModal] = useState(false)
   const slugTimer = useRef<ReturnType<typeof setTimeout> | null>(null)
@@ -48,15 +48,18 @@ export default function BotPage() {
     }
     setSaving(true); setAlert(null)
     try {
+      let slug: string
       if (!bot) {
         const created = await createBot({ chat_title: form.chat_title || 'チャット', public_slug: form.public_slug! })
         setBot(created); setForm(created)
         refetchBot()
+        slug = created.public_slug
       } else {
         const updated = await updateBot(form)
         setBot(updated); setForm(updated)
+        slug = updated.public_slug
       }
-      setAlert({ type: 'success', msg: '保存しました。' })
+      setAlert({ type: 'success', msg: '保存しました。', link: `${BASE_URL}${slug}` })
     } catch (err) {
       setAlert({ type: 'error', msg: extractApiError(err, '保存に失敗しました。') })
     } finally { setSaving(false) }
@@ -103,28 +106,35 @@ export default function BotPage() {
         <div className="form-field">
           <label className="form-label">公開URL</label>
           {form.public_slug ? (
-            <div className="slug-preview">
-              <span>🔗</span>
-              <span>{publicUrl}</span>
-              <div style={{ position: 'relative', display: 'inline-block' }}>
-                <button className="btn btn-secondary btn-sm" onClick={() => {
-                  navigator.clipboard.writeText(publicUrl)
-                  setCopied(true)
-                  setTimeout(() => setCopied(false), 2000)
-                }}>コピー</button>
-                {copied && (
-                  <div style={{
-                    position: 'absolute', bottom: 'calc(100% + 6px)', left: '50%',
-                    transform: 'translateX(-50%)',
-                    background: '#1e293b', color: '#fff',
-                    fontSize: 12, padding: '4px 10px', borderRadius: 6,
-                    whiteSpace: 'nowrap', pointerEvents: 'none',
-                  }}>
-                    コピーしました
-                  </div>
-                )}
+            <>
+              <div className="slug-preview">
+                <span>🔗</span>
+                <span>{publicUrl}</span>
+                <div style={{ position: 'relative', display: 'inline-block' }}>
+                  <button className="btn btn-secondary btn-sm" onClick={() => {
+                    navigator.clipboard.writeText(publicUrl)
+                    setCopied(true)
+                    setTimeout(() => setCopied(false), 2000)
+                  }}>コピー</button>
+                  {copied && (
+                    <div style={{
+                      position: 'absolute', bottom: 'calc(100% + 6px)', left: '50%',
+                      transform: 'translateX(-50%)',
+                      background: '#1e293b', color: '#fff',
+                      fontSize: 12, padding: '4px 10px', borderRadius: 6,
+                      whiteSpace: 'nowrap', pointerEvents: 'none',
+                    }}>
+                      コピーしました
+                    </div>
+                  )}
+                </div>
+                <a href={publicUrl} target="_blank" rel="noopener noreferrer"
+                  className="btn btn-secondary btn-sm">
+                  開く ↗
+                </a>
               </div>
-            </div>
+              <span className="form-hint">このURLにアクセスするとチャットボットを確認できます。</span>
+            </>
           ) : (
             <span className="form-hint">Slug を入力すると公開URLが決まります。</span>
           )}
@@ -257,7 +267,17 @@ export default function BotPage() {
         </div>
       </div>
 
-      {alert && <div className={`alert alert-${alert.type}`} style={{ marginTop: 16 }}>{alert.msg}</div>}
+      {alert && (
+        <div className={`alert alert-${alert.type}`} style={{ marginTop: 16 }}>
+          {alert.msg}
+          {alert.link && (
+            <a href={alert.link} target="_blank" rel="noopener noreferrer"
+              style={{ marginLeft: 12, fontWeight: 600, textDecoration: 'underline', color: 'inherit' }}>
+              ボットを確認する ↗
+            </a>
+          )}
+        </div>
+      )}
 
       <div style={{ marginTop: 20 }}>
         <button className="btn btn-primary" onClick={handleSave} disabled={saving}>
