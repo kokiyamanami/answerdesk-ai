@@ -15,11 +15,12 @@ const NAV_ITEMS = [
 ]
 
 export default function AdminLayout() {
-  const { user } = useAuth()
+  const { user, clearAuth } = useAuth()
   const [menuOpen, setMenuOpen] = useState(false)
 
   const handleLogout = async () => {
     await logout()
+    clearAuth()
     window.location.href = '/login'
   }
 

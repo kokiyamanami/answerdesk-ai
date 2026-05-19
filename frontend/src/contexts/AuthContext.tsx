@@ -9,6 +9,7 @@ interface AuthContextValue {
   loading: boolean
   refetch: () => void
   refetchBot: () => void
+  clearAuth: () => void
 }
 
 const AuthContext = createContext<AuthContextValue>({
@@ -17,6 +18,7 @@ const AuthContext = createContext<AuthContextValue>({
   loading: true,
   refetch: () => {},
   refetchBot: () => {},
+  clearAuth: () => {},
 })
 
 export function AuthProvider({ children }: { children: ReactNode }) {
@@ -51,8 +53,10 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [])
 
+  const clearAuth = () => { setUser(null); setBot(null) }
+
   return (
-    <AuthContext.Provider value={{ user, bot, loading, refetch: load, refetchBot: loadBot }}>
+    <AuthContext.Provider value={{ user, bot, loading, refetch: load, refetchBot: loadBot, clearAuth }}>
       {children}
     </AuthContext.Provider>
   )
