@@ -14,7 +14,7 @@ class Bot(Base):
     user_id = Column(UUID(as_uuid=True), ForeignKey("users.id", ondelete="CASCADE"), nullable=False, unique=True)
     name = Column(String(255), nullable=False)
     public_slug = Column(String(50), nullable=False, unique=True)
-    is_public = Column(Boolean, nullable=False, default=False)
+    is_public = Column(Boolean, nullable=False, default=True)
     chat_title = Column(String(255), nullable=False)
     icon_url = Column(Text, nullable=True)
     welcome_message = Column(Text, nullable=True)
