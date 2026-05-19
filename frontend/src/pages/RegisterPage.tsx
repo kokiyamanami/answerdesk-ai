@@ -1,15 +1,17 @@
 import { useState } from 'react'
-import { Link, useNavigate } from 'react-router-dom'
+import { Link, useNavigate, Navigate } from 'react-router-dom'
 import api from '../lib/api'
 import { useAuth } from '../contexts/AuthContext'
 import '../admin.css'
 
 export default function RegisterPage() {
   const navigate = useNavigate()
-  const { refetch } = useAuth()
+  const { user, loading: authLoading, refetch } = useAuth()
   const [form, setForm] = useState({ email: '', password: '', confirm: '' })
   const [error, setError] = useState<string | null>(null)
-  const [loading, setLoading] = useState(false)
+  const [submitting, setSubmitting] = useState(false)
+
+  if (!authLoading && user) return <Navigate to="/app/bot" replace />
 
   const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault()
@@ -22,7 +24,7 @@ export default function RegisterPage() {
       setError('パスワードは8文字以上で入力してください。')
       return
     }
-    setLoading(true)
+    setSubmitting(true)
     try {
       await api.post('/auth/register', {
         email: form.email,
@@ -34,7 +36,7 @@ export default function RegisterPage() {
       const msg = (err as { response?: { data?: { detail?: { message?: string } } } })?.response?.data?.detail?.message
       setError(msg || '登録に失敗しました。')
     } finally {
-      setLoading(false)
+      setSubmitting(false)
     }
   }
 
@@ -117,10 +119,10 @@ export default function RegisterPage() {
             <button
               type="submit"
               className="btn btn-primary"
-              disabled={loading}
+              disabled={submitting}
               style={{ width: '100%', marginTop: 24, justifyContent: 'center' }}
             >
-              {loading ? '登録中...' : 'アカウントを作成'}
+              {submitting ? '登録中...' : 'アカウントを作成'}
             </button>
           </form>
         </div>

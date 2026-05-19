@@ -1,21 +1,23 @@
 import { useState } from 'react'
-import { Link, useNavigate } from 'react-router-dom'
+import { Link, useNavigate, Navigate } from 'react-router-dom'
 import api from '../lib/api'
 import { useAuth } from '../contexts/AuthContext'
 import '../admin.css'
 
 export default function LoginPage() {
   const navigate = useNavigate()
-  const { refetch } = useAuth()
+  const { user, loading: authLoading, refetch } = useAuth()
   const [email, setEmail] = useState('')
   const [password, setPassword] = useState('')
   const [error, setError] = useState<string | null>(null)
-  const [loading, setLoading] = useState(false)
+  const [submitting, setSubmitting] = useState(false)
+
+  if (!authLoading && user) return <Navigate to="/app/bot" replace />
 
   const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault()
     setError(null)
-    setLoading(true)
+    setSubmitting(true)
     try {
       await api.post('/auth/login', { email, password })
       refetch()
@@ -23,7 +25,7 @@ export default function LoginPage() {
     } catch {
       setError('メールアドレスまたはパスワードが正しくありません。')
     } finally {
-      setLoading(false)
+      setSubmitting(false)
     }
   }
 
@@ -91,10 +93,10 @@ export default function LoginPage() {
             <button
               type="submit"
               className="btn btn-primary"
-              disabled={loading}
+              disabled={submitting}
               style={{ width: '100%', marginTop: 24, justifyContent: 'center' }}
             >
-              {loading ? 'ログイン中...' : 'ログイン'}
+              {submitting ? 'ログイン中...' : 'ログイン'}
             </button>
           </form>
         </div>
