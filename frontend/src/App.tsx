@@ -1,6 +1,7 @@
 import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom'
 import { AuthProvider } from './contexts/AuthContext'
 import RequireAuth from './components/RequireAuth'
+import RequireBot from './components/RequireBot'
 import AdminLayout from './components/AdminLayout'
 import LoginPage from './pages/LoginPage'
 import RegisterPage from './pages/RegisterPage'
@@ -27,15 +28,17 @@ function App() {
           <Route element={<RequireAuth />}>
             <Route element={<AdminLayout />}>
               <Route path="/app/bot" element={<BotPage />} />
-              <Route path="/app/design" element={<DesignPage />} />
-              <Route path="/app/contact" element={<ContactPage />} />
-              <Route path="/app/faqs" element={<FAQPage />} />
-              <Route path="/app/faqs/new" element={<FAQFormPage />} />
-              <Route path="/app/faqs/:id/edit" element={<FAQFormPage />} />
-              <Route path="/app/documents" element={<DocumentPage />} />
-              <Route path="/app/documents/upload" element={<DocumentUploadPage />} />
-              <Route path="/app/conversations" element={<ConversationPage />} />
-              <Route path="/app/form-submissions" element={<FormSubmissionsPage />} />
+              <Route element={<RequireBot />}>
+                <Route path="/app/design" element={<DesignPage />} />
+                <Route path="/app/contact" element={<ContactPage />} />
+                <Route path="/app/faqs" element={<FAQPage />} />
+                <Route path="/app/faqs/new" element={<FAQFormPage />} />
+                <Route path="/app/faqs/:id/edit" element={<FAQFormPage />} />
+                <Route path="/app/documents" element={<DocumentPage />} />
+                <Route path="/app/documents/upload" element={<DocumentUploadPage />} />
+                <Route path="/app/conversations" element={<ConversationPage />} />
+                <Route path="/app/form-submissions" element={<FormSubmissionsPage />} />
+              </Route>
               <Route path="/app" element={<Navigate to="/app/bot" replace />} />
             </Route>
           </Route>
