@@ -224,9 +224,9 @@ export function FAQFormPage() {
     setSaving(true); setAlert(null)
     try {
       if (isEdit) {
-        await updateFaq(id!, { question: form.question, answer: form.answer, category: form.category || null })
+        await updateFaq(id!, { question: form.question, answer: form.answer, category: form.category || undefined })
       } else {
-        await createFaq({ question: form.question, answer: form.answer, category: form.category || null })
+        await createFaq({ question: form.question, answer: form.answer, category: form.category || undefined })
       }
       navigate('/app/faqs')
     } catch {
