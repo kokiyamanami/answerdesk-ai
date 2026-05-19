@@ -361,6 +361,11 @@ body {
 .alert-error   { background: #fef2f2; color: #dc2626; border: 1px solid #fecaca; }
 .alert-warning { background: #fffbeb; color: #d97706; border: 1px solid #fed7aa; }
 
+@keyframes fadeInUp {
+  from { opacity: 0; transform: translateY(8px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+
 /* ===== Table ===== */
 .data-table {
   width: 100%;
