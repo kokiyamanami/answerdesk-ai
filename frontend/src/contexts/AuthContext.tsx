@@ -32,16 +32,20 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
   const load = () => {
     fetchMe()
-      .then(u => { setUser(u); return fetchBot() })
-      .then(setBot)
-      .catch(() => {})
+      .then(u => {
+        setUser(u)
+        return fetchBot().then(setBot).catch(() => setBot(null))
+      })
+      .catch(() => { setUser(null); setBot(null) })
       .finally(() => setLoading(false))
   }
 
   useEffect(() => {
     fetchMe()
-      .then(u => { setUser(u); return fetchBot() })
-      .then(setBot)
+      .then(u => {
+        setUser(u)
+        return fetchBot().then(setBot).catch(() => setBot(null))
+      })
       .catch(() => setUser(null))
       .finally(() => setLoading(false))
   // eslint-disable-next-line react-hooks/exhaustive-deps

@@ -1,10 +1,12 @@
 import { useState } from 'react'
 import { Link, useNavigate } from 'react-router-dom'
 import api from '../lib/api'
+import { useAuth } from '../contexts/AuthContext'
 import '../admin.css'
 
 export default function RegisterPage() {
   const navigate = useNavigate()
+  const { refetch } = useAuth()
   const [form, setForm] = useState({ email: '', password: '', confirm: '' })
   const [error, setError] = useState<string | null>(null)
   const [loading, setLoading] = useState(false)
@@ -26,6 +28,7 @@ export default function RegisterPage() {
         email: form.email,
         password: form.password,
       })
+      refetch()
       navigate('/app/bot')
     } catch (err) {
       const msg = (err as { response?: { data?: { detail?: { message?: string } } } })?.response?.data?.detail?.message
