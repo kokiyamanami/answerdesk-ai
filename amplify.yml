@@ -21,6 +21,9 @@ frontend:
         - key: Cache-Control
           value: no-cache
 redirects:
+  - source: '/<*>/'
+    target: '/index.html'
+    status: '200'
   - source: '/<*>'
     target: '/index.html'
     status: '200'
