@@ -2,11 +2,13 @@ import { useEffect, useState } from 'react'
 import { fetchFormSubmissions } from '../lib/apiClient'
 import type { FormSubmission } from '../types/api'
 import { FORM_FIELD_DEFS } from '../data/formFields'
+import Pagination, { usePagination } from '../components/Pagination'
 
 export default function FormSubmissionsPage() {
   const [submissions, setSubmissions] = useState<FormSubmission[]>([])
   const [loading, setLoading] = useState(true)
   const [expanded, setExpanded] = useState<string | null>(null)
+  const pg = usePagination(submissions, 20)
 
   useEffect(() => {
     fetchFormSubmissions().then(setSubmissions).catch(() => {}).finally(() => setLoading(false))
@@ -27,7 +29,7 @@ export default function FormSubmissionsPage() {
             <div style={{ fontSize: 32, marginBottom: 8 }}>📬</div>
             <p>まだ送信はありません。</p>
           </div>
-        ) : (
+        ) : (<>
           <table className="data-table">
             <thead>
               <tr>
@@ -39,7 +41,7 @@ export default function FormSubmissionsPage() {
               </tr>
             </thead>
             <tbody>
-              {submissions.map(s => (
+              {pg.pageItems.map(s => (
                 <>
                   <tr key={s.id}>
                     <td style={{ color: 'var(--gray-500)' }}>{new Date(s.submitted_at).toLocaleString('ja-JP')}</td>
@@ -75,6 +77,8 @@ export default function FormSubmissionsPage() {
               ))}
             </tbody>
           </table>
+        <Pagination page={pg.page} pageCount={pg.pageCount} onChange={pg.setPage} total={pg.total} />
+        </>
         )}
       </div>
     </div>

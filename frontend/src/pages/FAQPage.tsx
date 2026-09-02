@@ -2,6 +2,7 @@ import { useEffect, useRef, useState } from 'react'
 import { useNavigate, useParams } from 'react-router-dom'
 import { fetchFaqs, createFaq, updateFaq, deleteFaq, fetchBot, extractApiError, exportFaqsCsv, importFaqsCsv } from '../lib/apiClient'
 import type { FAQ } from '../types/api'
+import Pagination, { usePagination } from '../components/Pagination'
 import { INDUSTRIES, FAQ_TEMPLATES, type FAQTemplate } from '../data/faqTemplates'
 
 function TemplateModal({ industry, onClose, onAdd }: {
@@ -99,6 +100,7 @@ export default function FAQPage() {
   const [industry, setIndustry] = useState<string | null>(null)
   const [showTemplate, setShowTemplate] = useState(false)
   const navigate = useNavigate()
+  const pg = usePagination(faqs)
 
   useEffect(() => {
     Promise.all([
@@ -213,7 +215,7 @@ export default function FAQPage() {
             <div style={{ fontSize: 32, marginBottom: 8 }}>💬</div>
             <p>FAQがありません。「新規追加」から作成してください。</p>
           </div>
-        ) : (
+        ) : (<>
           <table className="data-table">
             <thead>
               <tr>
@@ -224,7 +226,7 @@ export default function FAQPage() {
               </tr>
             </thead>
             <tbody>
-              {faqs.map(faq => (
+              {pg.pageItems.map(faq => (
                 <tr key={faq.id}>
                   <td style={{ verticalAlign: 'top' }}>{faq.question}</td>
                   <td style={{ verticalAlign: 'top' }}>
@@ -246,6 +248,8 @@ export default function FAQPage() {
               ))}
             </tbody>
           </table>
+        <Pagination page={pg.page} pageCount={pg.pageCount} onChange={pg.setPage} total={pg.total} />
+        </>
         )}
       </div>
     </div>
