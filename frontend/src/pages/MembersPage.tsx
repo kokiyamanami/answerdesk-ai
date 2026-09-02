@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react'
 import {
-  fetchBotMembers, inviteBotMember, updateBotMemberRole, removeBotMember, extractApiError,
+  fetchBotMembers, inviteBotMember, updateBotMemberRole, removeBotMember, cancelBotInvite, extractApiError,
 } from '../lib/apiClient'
 import type { BotMember } from '../types/api'
 
@@ -24,16 +24,22 @@ export default function MembersPage() {
     if (!e || busy) return
     setBusy(true); setAlert(null)
     try {
-      await inviteBotMember(e, role)
+      const created = await inviteBotMember(e, role)
       setEmail('')
       await load()
-      setAlert({ type: 'success', msg: `${e} を追加しました。` })
+      setAlert({
+        type: 'success',
+        msg: created.status === 'pending'
+          ? `${e} を招待しました。相手がアカウント登録すると自動で参加します。`
+          : `${e} を追加しました。`,
+      })
     } catch (err) {
       setAlert({ type: 'error', msg: extractApiError(err, '追加に失敗しました。') })
     } finally { setBusy(false) }
   }
 
   const handleRole = async (m: BotMember, next: 'owner' | 'editor') => {
+    if (!m.user_id) return
     setAlert(null)
     try {
       await updateBotMemberRole(m.user_id, next)
@@ -44,10 +50,12 @@ export default function MembersPage() {
   }
 
   const handleRemove = async (m: BotMember) => {
-    if (!confirm(`${m.email} をメンバーから外しますか？`)) return
+    const isPending = m.status === 'pending'
+    if (!confirm(isPending ? `${m.email} の招待を取り消しますか？` : `${m.email} をメンバーから外しますか？`)) return
     setAlert(null)
     try {
-      await removeBotMember(m.user_id)
+      if (isPending && m.invite_id) await cancelBotInvite(m.invite_id)
+      else if (m.user_id) await removeBotMember(m.user_id)
       await load()
     } catch (err) {
       setAlert({ type: 'error', msg: extractApiError(err, '削除に失敗しました。') })
@@ -103,32 +111,39 @@ export default function MembersPage() {
               </tr>
             </thead>
             <tbody>
-              {members.map(m => (
-                <tr key={m.user_id}>
-                  <td>
-                    <div style={{ fontWeight: 600, color: 'var(--gray-800)' }}>
-                      {m.display_name}{m.is_me && <span style={{ color: 'var(--gray-400)', fontWeight: 400 }}>（自分）</span>}
-                    </div>
-                    <div style={{ fontSize: 12, color: 'var(--gray-400)' }}>{m.email}</div>
-                  </td>
-                  <td>
-                    {iAmOwner ? (
-                      <select className="form-input" style={{ padding: '4px 8px', fontSize: 13 }}
-                        value={m.role} onChange={e => handleRole(m, e.target.value as 'owner' | 'editor')}>
-                        <option value="editor">編集者</option>
-                        <option value="owner">オーナー</option>
-                      </select>
-                    ) : (
-                      <span>{ROLE_LABEL[m.role] ?? m.role}</span>
-                    )}
-                  </td>
-                  <td>
-                    {iAmOwner && (
-                      <button className="btn btn-danger btn-sm" onClick={() => handleRemove(m)}>削除</button>
-                    )}
-                  </td>
-                </tr>
-              ))}
+              {members.map(m => {
+                const pending = m.status === 'pending'
+                return (
+                  <tr key={m.user_id ?? m.invite_id} style={pending ? { opacity: 0.7 } : undefined}>
+                    <td>
+                      <div style={{ fontWeight: 600, color: 'var(--gray-800)' }}>
+                        {pending ? m.email : m.display_name}
+                        {m.is_me && <span style={{ color: 'var(--gray-400)', fontWeight: 400 }}>（自分）</span>}
+                        {pending && <span className="badge badge-gray" style={{ marginLeft: 8 }}>招待中（未登録）</span>}
+                      </div>
+                      {!pending && <div style={{ fontSize: 12, color: 'var(--gray-400)' }}>{m.email}</div>}
+                    </td>
+                    <td>
+                      {iAmOwner && !pending ? (
+                        <select className="form-input" style={{ padding: '4px 8px', fontSize: 13 }}
+                          value={m.role} onChange={e => handleRole(m, e.target.value as 'owner' | 'editor')}>
+                          <option value="editor">編集者</option>
+                          <option value="owner">オーナー</option>
+                        </select>
+                      ) : (
+                        <span>{ROLE_LABEL[m.role] ?? m.role}</span>
+                      )}
+                    </td>
+                    <td>
+                      {iAmOwner && (
+                        <button className="btn btn-danger btn-sm" onClick={() => handleRemove(m)}>
+                          {pending ? '取消' : '削除'}
+                        </button>
+                      )}
+                    </td>
+                  </tr>
+                )
+              })}
             </tbody>
           </table>
         )}
