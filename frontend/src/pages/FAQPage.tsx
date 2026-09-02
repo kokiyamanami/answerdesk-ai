@@ -217,7 +217,8 @@ export default function FAQPage() {
           <table className="data-table">
             <thead>
               <tr>
-                <th>質問</th>
+                <th style={{ width: '32%' }}>質問</th>
+                <th>回答</th>
                 <th style={{ width: 140 }}>カテゴリ</th>
                 <th style={{ width: 100 }}></th>
               </tr>
@@ -225,9 +226,17 @@ export default function FAQPage() {
             <tbody>
               {faqs.map(faq => (
                 <tr key={faq.id}>
-                  <td>{faq.question}</td>
-                  <td>{faq.category ? <span className="badge badge-indigo">{faq.category}</span> : <span style={{ color: 'var(--gray-400)' }}>—</span>}</td>
-                  <td>
+                  <td style={{ verticalAlign: 'top' }}>{faq.question}</td>
+                  <td style={{ verticalAlign: 'top' }}>
+                    <div title={faq.answer} style={{
+                      display: '-webkit-box', WebkitLineClamp: 2, WebkitBoxOrient: 'vertical',
+                      overflow: 'hidden', color: 'var(--gray-500)', fontSize: 13, lineHeight: 1.5,
+                    }}>
+                      {faq.answer}
+                    </div>
+                  </td>
+                  <td style={{ verticalAlign: 'top' }}>{faq.category ? <span className="badge badge-indigo">{faq.category}</span> : <span style={{ color: 'var(--gray-400)' }}>—</span>}</td>
+                  <td style={{ verticalAlign: 'top' }}>
                     <div style={{ display: 'flex', gap: 6 }}>
                       <button className="btn btn-secondary btn-sm" onClick={() => navigate(`/app/faqs/${faq.id}/edit`)}>編集</button>
                       <button className="btn btn-danger btn-sm" onClick={() => handleDelete(faq.id)}>削除</button>
