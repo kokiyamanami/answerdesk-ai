@@ -1,0 +1,73 @@
+name: deploy-backend
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - "backend/**"
+      - ".github/workflows/deploy-backend.yml"
+  workflow_dispatch:
+
+concurrency:
+  group: deploy-backend
+  cancel-in-progress: false
+
+env:
+  AWS_REGION: ap-northeast-1
+  ECR_REPO: 389323710086.dkr.ecr.ap-northeast-1.amazonaws.com/answerdesk-api
+  SERVICE_ARN: arn:aws:apprunner:ap-northeast-1:389323710086:service/answerdesk-api/876bf55254954f2dbaac4ca06ae2dff0
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    permissions:
+      id-token: write
+      contents: read
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: aws-actions/configure-aws-credentials@v4
+        with:
+          role-to-assume: arn:aws:iam::389323710086:role/answerdesk-github-actions
+          aws-region: ${{ env.AWS_REGION }}
+
+      - uses: aws-actions/amazon-ecr-login@v2
+
+      - name: Build and push image
+        run: |
+          docker build --platform linux/amd64 \
+            -t "$ECR_REPO:latest" -t "$ECR_REPO:${GITHUB_SHA::7}" ./backend
+          docker push "$ECR_REPO:latest"
+          docker push "$ECR_REPO:${GITHUB_SHA::7}"
+
+      # App Runner has AutoDeployments enabled, so the push above already triggers a
+      # rollout. Wait on it and fail the job if the rollout fails. entrypoint.sh runs
+      # `alembic upgrade head` on container start.
+      - name: Wait for App Runner rollout
+        run: |
+          echo "waiting for a new operation to register..."
+          sleep 30
+          OP_ID=$(aws apprunner list-operations --service-arn "$SERVICE_ARN" \
+            --max-results 1 --query 'OperationSummaryList[0].Id' --output text)
+          echo "operation: $OP_ID"
+          for i in $(seq 1 40); do
+            STATUS=$(aws apprunner list-operations --service-arn "$SERVICE_ARN" \
+              --query "OperationSummaryList[?Id=='$OP_ID'].Status | [0]" --output text)
+            echo "[$i] $STATUS"
+            case "$STATUS" in
+              SUCCEEDED) echo "rollout ok"; exit 0 ;;
+              FAILED|ROLLBACK_SUCCEEDED|ROLLBACK_FAILED) echo "rollout failed"; exit 1 ;;
+            esac
+            sleep 20
+          done
+          echo "timed out waiting for rollout"; exit 1
+
+      - name: Health check
+        run: |
+          for i in $(seq 1 10); do
+            code=$(curl -s -o /dev/null -w '%{http_code}' https://ptrgcwbczw.ap-northeast-1.awsapprunner.com/health || true)
+            echo "health: $code"
+            [ "$code" = "200" ] && exit 0
+            sleep 10
+          done
+          exit 1
