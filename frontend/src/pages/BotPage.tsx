@@ -1,7 +1,6 @@
 import { useEffect, useState, useRef } from 'react'
 import { fetchBot, createBot, updateBot, checkSlug, extractApiError } from '../lib/apiClient'
 import type { Bot } from '../types/api'
-import UpgradeModal from '../components/UpgradeModal'
 import { INDUSTRIES } from '../data/faqTemplates'
 import { useAuth } from '../contexts/AuthContext'
 
@@ -15,7 +14,6 @@ export default function BotPage() {
   const [saving, setSaving] = useState(false)
   const [alert, setAlert] = useState<{ type: 'success' | 'error'; msg: string; link?: string } | null>(null)
   const [copied, setCopied] = useState(false)
-  const [showUpgradeModal, setShowUpgradeModal] = useState(false)
   const slugTimer = useRef<ReturnType<typeof setTimeout> | null>(null)
 
   useEffect(() => {
@@ -75,7 +73,6 @@ export default function BotPage() {
 
   return (
     <>
-      {showUpgradeModal && <UpgradeModal onClose={() => setShowUpgradeModal(false)} />}
       <div>
       <div className="page-header">
         <h1 className="page-title">ボット設定</h1>
@@ -193,33 +190,25 @@ export default function BotPage() {
         </p>
         <div style={{ display: 'flex', gap: 10, flexWrap: 'wrap' }}>
           {[
-            { value: 'gpt-4.1-mini', label: 'GPT-4.1 mini', desc: '高速・低コスト', paid: false },
-            { value: 'gpt-4.1',      label: 'GPT-4.1',      desc: '高精度',         paid: true },
-            { value: 'gpt-4o-mini',  label: 'GPT-4o mini',  desc: '高速・低コスト', paid: true },
-            { value: 'gpt-4o',       label: 'GPT-4o',       desc: '高精度',         paid: true },
+            { value: 'gpt-4.1-mini', label: 'GPT-4.1 mini', desc: '高速・低コスト' },
+            { value: 'gpt-4.1',      label: 'GPT-4.1',      desc: '高精度' },
+            { value: 'gpt-4o-mini',  label: 'GPT-4o mini',  desc: '高速・低コスト' },
+            { value: 'gpt-4o',       label: 'GPT-4o',       desc: '高精度' },
           ].map(m => {
             const selected = (form.ai_model || 'gpt-4.1-mini') === m.value
             return (
               <div
                 key={m.value}
-                onClick={() => m.paid ? setShowUpgradeModal(true) : setForm(f => ({ ...f, ai_model: m.value }))}
+                onClick={() => setForm(f => ({ ...f, ai_model: m.value }))}
                 style={{
                   border: selected ? '2px solid var(--brand)' : '2px solid var(--gray-200)',
                   borderRadius: 10, padding: '12px 16px', minWidth: 130,
-                  background: selected ? '#eef2ff' : m.paid ? 'var(--gray-50)' : '#fff',
-                  cursor: m.paid ? 'not-allowed' : 'pointer',
-                  opacity: m.paid ? 0.6 : 1,
+                  background: selected ? '#eef2ff' : '#fff',
+                  cursor: 'pointer',
                   position: 'relative',
                   transition: 'all 0.15s',
                 }}
               >
-                {m.paid && (
-                  <span style={{
-                    position: 'absolute', top: 6, right: 8,
-                    fontSize: 10, fontWeight: 700, color: 'var(--gray-400)',
-                    background: 'var(--gray-100)', borderRadius: 4, padding: '1px 5px',
-                  }}>🔒 有料</span>
-                )}
                 <div style={{ fontSize: 13, fontWeight: 700, color: 'var(--gray-800)', marginBottom: 2 }}>{m.label}</div>
                 <div style={{ fontSize: 11, color: 'var(--gray-500)' }}>{m.desc}</div>
               </div>
