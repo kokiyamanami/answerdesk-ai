@@ -97,3 +97,12 @@ export interface TestQuestion {
   last_score: number | null
   last_run_at: string | null
 }
+
+export interface BotMember {
+  user_id: string
+  email: string
+  display_name: string
+  role: 'owner' | 'editor'
+  is_me: boolean
+  created_at: string
+}

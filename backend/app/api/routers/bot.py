@@ -11,10 +11,11 @@ from pydantic import BaseModel, field_validator
 from sqlalchemy.orm import Session
 from typing import Optional
 
-from app.api.deps import get_current_user
+from app.api.deps import get_current_user, find_user_bot, get_user_bot
 from app.core.config import settings
 from app.db.session import get_db
 from app.models.bot import Bot
+from app.models.bot_member import ROLE_OWNER, BotMember
 from app.models.user import User
 
 ALLOWED_IMAGE_TYPES = {"image/jpeg", "image/png", "image/gif", "image/webp", "image/svg+xml"}
@@ -110,16 +111,13 @@ def _bot_to_response(bot: Bot) -> BotResponse:
 
 @router.get("", response_model=BotResponse)
 def get_bot(current_user: User = Depends(get_current_user), db: Session = Depends(get_db)):
-    bot = db.query(Bot).filter(Bot.user_id == current_user.id).first()
-    if not bot:
-        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND,
-                            detail={"code": "bot_not_found", "message": "ボットが見つかりません。"})
+    bot = get_user_bot(current_user, db)
     return _bot_to_response(bot)
 
 
 @router.post("", response_model=BotResponse, status_code=status.HTTP_201_CREATED)
 def create_bot(body: BotCreateRequest, current_user: User = Depends(get_current_user), db: Session = Depends(get_db)):
-    if db.query(Bot).filter(Bot.user_id == current_user.id).first():
+    if find_user_bot(current_user, db):
         raise HTTPException(status_code=status.HTTP_409_CONFLICT,
                             detail={"code": "bot_already_exists", "message": "ボットはすでに作成されています。"})
     if db.query(Bot).filter(Bot.public_slug == body.public_slug).first():
@@ -133,6 +131,8 @@ def create_bot(body: BotCreateRequest, current_user: User = Depends(get_current_
         fallback_message="申し訳ありませんが、お答えできませんでした。お問い合わせください。",
     )
     db.add(bot)
+    db.flush()
+    db.add(BotMember(bot_id=bot.id, user_id=current_user.id, role=ROLE_OWNER))
     db.commit()
     db.refresh(bot)
     return _bot_to_response(bot)
@@ -140,10 +140,7 @@ def create_bot(body: BotCreateRequest, current_user: User = Depends(get_current_
 
 @router.patch("", response_model=BotResponse)
 def update_bot(body: BotUpdateRequest, current_user: User = Depends(get_current_user), db: Session = Depends(get_db)):
-    bot = db.query(Bot).filter(Bot.user_id == current_user.id).first()
-    if not bot:
-        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND,
-                            detail={"code": "bot_not_found", "message": "ボットが見つかりません。"})
+    bot = get_user_bot(current_user, db)
 
     if body.public_slug and body.public_slug != bot.public_slug:
         if db.query(Bot).filter(Bot.public_slug == body.public_slug, Bot.id != bot.id).first():
@@ -171,7 +168,7 @@ def check_slug(
     if not SLUG_PATTERN.match(value):
         return SlugCheckResponse(value=value, available=False)
     # 自分のbotの現在のslugは「使用可能」とみなす
-    my_bot = db.query(Bot).filter(Bot.user_id == current_user.id).first()
+    my_bot = find_user_bot(current_user, db)
     if my_bot and my_bot.public_slug == value:
         return SlugCheckResponse(value=value, available=True)
     exists = db.query(Bot).filter(Bot.public_slug == value).first()
@@ -184,10 +181,7 @@ async def upload_icon(
     current_user: User = Depends(get_current_user),
     db: Session = Depends(get_db),
 ):
-    bot = db.query(Bot).filter(Bot.user_id == current_user.id).first()
-    if not bot:
-        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND,
-                            detail={"code": "bot_not_found", "message": "ボットが見つかりません。"})
+    bot = get_user_bot(current_user, db)
 
     if file.content_type not in ALLOWED_IMAGE_TYPES:
         raise HTTPException(status_code=status.HTTP_422_UNPROCESSABLE_ENTITY,

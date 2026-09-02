@@ -14,6 +14,7 @@ import DocumentPage, { DocumentUploadPage } from './pages/DocumentPage'
 import ConversationPage from './pages/ConversationPage'
 import FormSubmissionsPage from './pages/FormSubmissionsPage'
 import AccuracyTestPage from './pages/AccuracyTestPage'
+import MembersPage from './pages/MembersPage'
 import PublicChatPage from './pages/PublicChatPage'
 import LandingPage from './pages/LandingPage'
 
@@ -40,6 +41,7 @@ function App() {
                 <Route path="/app/documents" element={<DocumentPage />} />
                 <Route path="/app/documents/upload" element={<DocumentUploadPage />} />
                 <Route path="/app/accuracy" element={<AccuracyTestPage />} />
+                <Route path="/app/members" element={<MembersPage />} />
                 <Route path="/app/conversations" element={<ConversationPage />} />
                 <Route path="/app/form-submissions" element={<FormSubmissionsPage />} />
               </Route>

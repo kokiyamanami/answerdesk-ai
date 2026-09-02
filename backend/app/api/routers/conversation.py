@@ -4,7 +4,7 @@ from fastapi import APIRouter, Depends
 from pydantic import BaseModel
 from sqlalchemy.orm import Session
 
-from app.api.deps import get_current_user
+from app.api.deps import get_current_user, find_user_bot
 from app.db.session import get_db
 from app.models.bot import Bot
 from app.models.conversation import Conversation, Message
@@ -27,7 +27,7 @@ def list_conversations(
     current_user: User = Depends(get_current_user),
     db: Session = Depends(get_db),
 ):
-    bot = db.query(Bot).filter(Bot.user_id == current_user.id).first()
+    bot = find_user_bot(current_user, db)
     if not bot:
         return []
 

@@ -13,6 +13,7 @@ const NAV_ITEMS = [
   { to: '/app/accuracy',         icon: '🧪', label: '精度テスト' },
   { to: '/app/conversations',    icon: '🗂️', label: '会話ログ' },
   { to: '/app/form-submissions', icon: '📩', label: 'フォーム送信' },
+  { to: '/app/members',         icon: '👥', label: 'メンバー' },
 ]
 
 export default function AdminLayout() {
