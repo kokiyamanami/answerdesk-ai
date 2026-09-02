@@ -6,6 +6,7 @@ from app.models.document import Document
 from app.models.document_chunk import DocumentChunk
 from app.models.conversation import Conversation, Message, MessageCitation
 from app.models.bot_test_question import BotTestQuestion
+from app.models.bot_member import BotMember
 
 __all__ = [
     "User",
@@ -18,4 +19,5 @@ __all__ = [
     "Message",
     "MessageCitation",
     "BotTestQuestion",
+    "BotMember",
 ]

@@ -7,7 +7,7 @@ from fastapi import APIRouter, Depends, HTTPException, status
 from pydantic import BaseModel
 from sqlalchemy.orm import Session
 
-from app.api.deps import get_current_user
+from app.api.deps import get_current_user, get_user_bot
 from app.db.session import get_db
 from app.models.bot import Bot
 from app.models.bot_test_question import BotTestQuestion
@@ -41,11 +41,7 @@ class TestQuestionUpdateRequest(BaseModel):
 
 
 def _get_bot_or_404(current_user: User, db: Session) -> Bot:
-    bot = db.query(Bot).filter(Bot.user_id == current_user.id).first()
-    if not bot:
-        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND,
-                            detail={"code": "bot_not_found", "message": "ボットが見つかりません。"})
-    return bot
+    return get_user_bot(current_user, db)
 
 
 def _to_response(q: BotTestQuestion) -> TestQuestionResponse:

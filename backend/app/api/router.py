@@ -2,13 +2,14 @@ from fastapi import APIRouter
 
 from app.api.routers import (
     auth, bot, theme, faq, document, test_chat, public, conversation,
-    form_submission, seed, test_question,
+    form_submission, seed, test_question, bot_member,
 )
 
 api_router = APIRouter()
 api_router.include_router(seed.router)
 api_router.include_router(auth.router)
 api_router.include_router(bot.router)
+api_router.include_router(bot_member.router)
 api_router.include_router(theme.router)
 api_router.include_router(faq.router)
 api_router.include_router(document.router)

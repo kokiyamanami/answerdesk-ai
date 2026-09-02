@@ -6,7 +6,7 @@ from fastapi import APIRouter, Depends, HTTPException, status
 from pydantic import BaseModel
 from sqlalchemy.orm import Session
 
-from app.api.deps import get_current_user
+from app.api.deps import get_current_user, get_user_bot
 from app.db.session import get_db
 from app.models.bot import Bot
 from app.models.conversation import Conversation
@@ -39,10 +39,7 @@ def test_chat(
     current_user: User = Depends(get_current_user),
     db: Session = Depends(get_db),
 ):
-    bot = db.query(Bot).filter(Bot.user_id == current_user.id).first()
-    if not bot:
-        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND,
-                            detail={"code": "bot_not_found", "message": "ボットが見つかりません。"})
+    bot = get_user_bot(current_user, db)
 
     # テストチャット用の一時会話セッション（毎回新規）
     conv = Conversation(

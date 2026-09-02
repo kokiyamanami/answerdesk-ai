@@ -1,5 +1,5 @@
 import api from '../lib/api'
-import type { Bot, ThemePreset, FAQ, Document, ConversationSummary, ChatResponse, User, FormSubmission, TestQuestion } from '../types/api'
+import type { Bot, ThemePreset, FAQ, Document, ConversationSummary, ChatResponse, User, FormSubmission, TestQuestion, BotMember } from '../types/api'
 
 // Extract a human-readable error message from an Axios error.
 // Handles: Pydantic 422 arrays, custom {message:} objects, plain strings.
@@ -94,3 +94,12 @@ export const updateTestQuestion = (id: string, data: { question?: string; note?:
 export const deleteTestQuestion = (id: string) => api.delete(`/test-questions/${id}`)
 export const runTestQuestions = () =>
   api.post<TestQuestion[]>('/test-questions/run').then(r => r.data)
+
+// Bot members
+export const fetchBotMembers = () =>
+  api.get<BotMember[]>('/bot/members').then(r => r.data)
+export const inviteBotMember = (email: string, role: 'owner' | 'editor') =>
+  api.post<BotMember>('/bot/members', { email, role }).then(r => r.data)
+export const updateBotMemberRole = (userId: string, role: 'owner' | 'editor') =>
+  api.patch<BotMember>(`/bot/members/${userId}`, { role }).then(r => r.data)
+export const removeBotMember = (userId: string) => api.delete(`/bot/members/${userId}`)

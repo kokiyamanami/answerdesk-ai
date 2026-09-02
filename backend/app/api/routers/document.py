@@ -9,7 +9,7 @@ from sqlalchemy.orm import Session
 from typing import Optional
 from uuid import UUID
 
-from app.api.deps import get_current_user
+from app.api.deps import get_current_user, get_user_bot
 from app.core.config import settings
 from app.db.session import get_db
 from app.models.bot import Bot
@@ -35,11 +35,7 @@ class DocumentResponse(BaseModel):
 
 
 def _get_bot_or_404(current_user: User, db: Session) -> Bot:
-    bot = db.query(Bot).filter(Bot.user_id == current_user.id).first()
-    if not bot:
-        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND,
-                            detail={"code": "bot_not_found", "message": "ボットが見つかりません。"})
-    return bot
+    return get_user_bot(current_user, db)
 
 
 def _doc_to_response(doc: Document) -> DocumentResponse:
