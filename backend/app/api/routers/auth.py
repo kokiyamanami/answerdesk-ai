@@ -6,9 +6,25 @@ from app.api.deps import get_current_user
 from app.core.config import settings
 from app.core.security import create_access_token, hash_password, verify_password
 from app.db.session import get_db
+from app.models.bot_invite import BotInvite
+from app.models.bot_member import BotMember
 from app.models.user import User
 
 router = APIRouter(prefix="/auth", tags=["auth"])
+
+
+def _consume_pending_invites(user: User, db: Session) -> None:
+    """user のメール宛の保留招待を bot_members に変換する。"""
+    invites = db.query(BotInvite).filter(BotInvite.email == user.email).all()
+    if not invites:
+        return
+    for inv in invites:
+        already = db.query(BotMember).filter(
+            BotMember.bot_id == inv.bot_id, BotMember.user_id == user.id).first()
+        if not already:
+            db.add(BotMember(bot_id=inv.bot_id, user_id=user.id, role=inv.role))
+        db.delete(inv)
+    db.commit()
 
 
 class LoginRequest(BaseModel):
@@ -55,6 +71,8 @@ def register(body: RegisterRequest, response: Response, db: Session = Depends(ge
     db.commit()
     db.refresh(user)
 
+    _consume_pending_invites(user, db)
+
     token = create_access_token(str(user.id))
     response.set_cookie(
         key="access_token",
@@ -89,6 +107,8 @@ def login(body: LoginRequest, response: Response, db: Session = Depends(get_db))
     from datetime import datetime, timezone
     user.last_login_at = datetime.now(timezone.utc)
     db.commit()
+
+    _consume_pending_invites(user, db)
 
     return LoginResponse(user=UserResponse(id=str(user.id), email=user.email, display_name=user.display_name))
 

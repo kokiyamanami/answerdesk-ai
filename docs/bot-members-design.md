@@ -32,8 +32,15 @@
 - 新ページ `/app/members`（サイドバー「👥 メンバー」）
 - owner のみ招待フォーム・ロール変更・削除が見える。editor は一覧のみ
 
+## 保留招待（pending invite）— 実装済み 2026-09-03
+- `bot_invites(bot_id, email, role, invited_by)` テーブル（migration 0011）
+- 招待時に未登録なら 404 ではなく pending invite として保存
+- その人が register / login した時点で `_consume_pending_invites` が bot_members へ変換
+- `GET /bot/members` は active + pending をまとめて返す（`status`, `user_id`/`invite_id`）
+- `DELETE /bot/members/invites/{invite_id}` で取消
+- メンバー画面に「招待中（未登録）」行を表示
+
 ## 今回やらなかったこと（要判断 / follow-up）
-- **未登録ユーザーへの招待（pending invite）**: 現状は「先に登録して」で弾く。招待リンク/メールが必要なら `bot_invites` テーブルを追加
 - **登録制限**: 登録は今も誰でも可能。内部ツールとして「招待経由のみ登録可」にするかは別途
 - **同時編集の競合**: Bot 行は last-write-wins。必要になったら `updated_at` で楽観ロック
 - editor が自分のボットを新規作成することは不可（既にメンバーのため 409）。共有ボット運用の想定通りだが、要確認

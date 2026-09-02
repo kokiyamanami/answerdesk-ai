@@ -103,3 +103,4 @@ export const inviteBotMember = (email: string, role: 'owner' | 'editor') =>
 export const updateBotMemberRole = (userId: string, role: 'owner' | 'editor') =>
   api.patch<BotMember>(`/bot/members/${userId}`, { role }).then(r => r.data)
 export const removeBotMember = (userId: string) => api.delete(`/bot/members/${userId}`)
+export const cancelBotInvite = (inviteId: string) => api.delete(`/bot/members/invites/${inviteId}`)

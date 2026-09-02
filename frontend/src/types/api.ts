@@ -99,9 +99,11 @@ export interface TestQuestion {
 }
 
 export interface BotMember {
-  user_id: string
+  status: 'active' | 'pending'
+  user_id: string | null
+  invite_id: string | null
   email: string
-  display_name: string
+  display_name: string | null
   role: 'owner' | 'editor'
   is_me: boolean
   created_at: string
