@@ -87,3 +87,13 @@ export interface ChatResponse {
   citations: ChatCitation[]
   contact?: { url: string | null; email: string | null }
 }
+
+export interface TestQuestion {
+  id: string
+  question: string
+  note: string | null
+  last_answer: string | null
+  last_fallback: boolean | null
+  last_score: number | null
+  last_run_at: string | null
+}
