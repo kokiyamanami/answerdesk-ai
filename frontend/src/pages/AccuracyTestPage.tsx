@@ -3,6 +3,7 @@ import {
   fetchTestQuestions, createTestQuestion, deleteTestQuestion, runTestQuestions, extractApiError,
 } from '../lib/apiClient'
 import type { TestQuestion } from '../types/api'
+import Pagination, { usePagination } from '../components/Pagination'
 
 export default function AccuracyTestPage() {
   const [items, setItems] = useState<TestQuestion[]>([])
@@ -12,6 +13,7 @@ export default function AccuracyTestPage() {
   const [note, setNote] = useState('')
   const [adding, setAdding] = useState(false)
   const [alert, setAlert] = useState<{ type: 'success' | 'error'; msg: string } | null>(null)
+  const pg = usePagination(items, 20)
 
   useEffect(() => {
     fetchTestQuestions().then(setItems).catch(() => {}).finally(() => setLoading(false))
@@ -104,7 +106,7 @@ export default function AccuracyTestPage() {
             <div style={{ fontSize: 32, marginBottom: 8 }}>🧪</div>
             想定質問を追加してください。
           </div>
-        ) : (
+        ) : (<>
           <table className="data-table" style={{ width: '100%' }}>
             <thead>
               <tr>
@@ -116,7 +118,7 @@ export default function AccuracyTestPage() {
               </tr>
             </thead>
             <tbody>
-              {items.map(i => (
+              {pg.pageItems.map(i => (
                 <tr key={i.id}>
                   <td style={{ verticalAlign: 'top' }}>
                     <div style={{ fontWeight: 600, color: 'var(--gray-800)' }}>{i.question}</div>
@@ -144,6 +146,8 @@ export default function AccuracyTestPage() {
               ))}
             </tbody>
           </table>
+        <Pagination page={pg.page} pageCount={pg.pageCount} onChange={pg.setPage} total={pg.total} />
+        </>
         )}
       </div>
     </div>

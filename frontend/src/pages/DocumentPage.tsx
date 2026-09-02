@@ -2,6 +2,7 @@ import { useEffect, useState, useRef } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { fetchDocuments, uploadDocument, deleteDocument, extractApiError } from '../lib/apiClient'
 import type { Document } from '../types/api'
+import Pagination, { usePagination } from '../components/Pagination'
 
 const STATUS_MAP: Record<string, { label: string; cls: string }> = {
   uploaded:   { label: 'アップロード済', cls: 'badge-gray' },
@@ -14,6 +15,7 @@ export default function DocumentPage() {
   const [docs, setDocs] = useState<Document[]>([])
   const [loading, setLoading] = useState(true)
   const navigate = useNavigate()
+  const pg = usePagination(docs)
 
   useEffect(() => {
     fetchDocuments().then(res => setDocs(res)).catch(() => {}).finally(() => setLoading(false))
@@ -49,7 +51,7 @@ export default function DocumentPage() {
             <div style={{ fontSize: 32, marginBottom: 8 }}>📄</div>
             <p>ドキュメントがありません。PDFをアップロードしてください。</p>
           </div>
-        ) : (
+        ) : (<>
           <table className="data-table">
             <thead>
               <tr>
@@ -60,7 +62,7 @@ export default function DocumentPage() {
               </tr>
             </thead>
             <tbody>
-              {docs.map(doc => {
+              {pg.pageItems.map(doc => {
                 const s = STATUS_MAP[doc.status] ?? { label: doc.status, cls: 'badge-gray' }
                 return (
                   <tr key={doc.id}>
@@ -73,6 +75,8 @@ export default function DocumentPage() {
               })}
             </tbody>
           </table>
+        <Pagination page={pg.page} pageCount={pg.pageCount} onChange={pg.setPage} total={pg.total} />
+        </>
         )}
       </div>
     </div>

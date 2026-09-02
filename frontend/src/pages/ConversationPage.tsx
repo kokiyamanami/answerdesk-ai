@@ -1,10 +1,12 @@
 import { useEffect, useState } from 'react'
 import { fetchConversations } from '../lib/apiClient'
 import type { ConversationSummary } from '../types/api'
+import Pagination, { usePagination } from '../components/Pagination'
 
 export default function ConversationPage() {
   const [conversations, setConversations] = useState<ConversationSummary[]>([])
   const [loading, setLoading] = useState(true)
+  const pg = usePagination(conversations, 20)
 
   useEffect(() => {
     fetchConversations().then(res => setConversations(res)).catch(() => {}).finally(() => setLoading(false))
@@ -26,7 +28,7 @@ export default function ConversationPage() {
         </div>
       ) : (
         <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
-          {conversations.map(c => (
+          {pg.pageItems.map(c => (
             <div key={c.id} className="card" style={{ padding: '16px 20px' }}>
               <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', gap: 16 }}>
                 <div style={{ flex: 1, minWidth: 0 }}>
@@ -52,6 +54,7 @@ export default function ConversationPage() {
           ))}
         </div>
       )}
+      <Pagination page={pg.page} pageCount={pg.pageCount} onChange={pg.setPage} total={pg.total} />
     </div>
   )
 }
