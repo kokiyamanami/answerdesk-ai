@@ -65,11 +65,11 @@ def answer_question(
     RAG で質問に回答する。
     返り値: {answer, fallback, citations, retrieval_score}
     """
-    # 1. 意図分類（挨拶・感謝・別れ・クレーム・意味不明はRAGをスキップ）
+    # 1. 意図分類（挨拶・感謝・別れ・意味不明はRAGをスキップ）
+    # 「クレーム」は RAG をスキップしない: サポートFAQボットでは「〜できない/されない」
+    # のような不具合報告がクレームに分類されがちで、それこそFAQで答えるべき質問のため。
     model = bot.ai_model or settings.openai_chat_model
     intent = _classify_intent(question=question, model=model)
-    if intent == "complaint":
-        return _make_fallback(bot)
     if intent in _INTENT_RESPONSES:
         return {"answer": _INTENT_RESPONSES[intent], "fallback": False, "citations": [], "retrieval_score": None}
 
