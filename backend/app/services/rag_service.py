@@ -76,8 +76,12 @@ def answer_question(
     # 2. 会話履歴を取得
     history = _fetch_history(conversation=conversation, db=db) if conversation else []
 
-    # 3. 質問の Embedding 生成
-    q_embedding = generate_embedding(question)
+    # 3. 質問の Embedding 生成（失敗時は 500 ではなく fallback）
+    try:
+        q_embedding = generate_embedding(question)
+    except Exception:
+        logger.exception("Embedding generation failed; returning fallback")
+        return _make_fallback(bot)
 
     # 4. pgvector 類似検索
     chunks = _vector_search(bot_id=bot.id, embedding=q_embedding, db=db)
@@ -94,8 +98,12 @@ def answer_question(
     if _is_fallback_by_llm(context=context, question=question, model=model):
         return _make_fallback(bot)
 
-    # 8. 回答生成
-    answer = _generate_answer(context=context, question=question, model=model, history=history)
+    # 8. 回答生成（OpenAI 側の一時的な障害時は 500 ではなく fallback に落とす）
+    try:
+        answer = _generate_answer(context=context, question=question, model=model, history=history)
+    except Exception:
+        logger.exception("Answer generation failed; returning fallback")
+        return _make_fallback(bot)
 
     return {
         "answer": answer,
@@ -167,16 +175,21 @@ def _build_context(chunks: list[dict]) -> str:
 
 
 def _is_fallback_by_llm(context: str, question: str, model: str) -> bool:
-    client = OpenAI(api_key=settings.openai_api_key, timeout=settings.openai_request_timeout_seconds)
-    prompt = FALLBACK_JUDGMENT_PROMPT.format(context=context, question=question)
-    response = client.chat.completions.create(
-        model=model,
-        messages=[{"role": "user", "content": prompt}],
-        max_tokens=5,
-        temperature=0,
-    )
-    answer = response.choices[0].message.content.strip().upper()
-    return answer != "YES"
+    """参考情報で答えられそうかを LLM に確認する。判定自体が失敗したら回答生成に進ませる（False）。"""
+    try:
+        client = OpenAI(api_key=settings.openai_api_key, timeout=settings.openai_request_timeout_seconds)
+        prompt = FALLBACK_JUDGMENT_PROMPT.format(context=context, question=question)
+        response = client.chat.completions.create(
+            model=model,
+            messages=[{"role": "user", "content": prompt}],
+            max_tokens=5,
+            temperature=0,
+        )
+        content = response.choices[0].message.content or ""
+        return content.strip().upper() != "YES"
+    except Exception:
+        logger.warning("Fallback judgment failed; proceeding to answer generation", exc_info=True)
+        return False
 
 
 def _generate_answer(context: str, question: str, model: str, history: list[dict] | None = None) -> str:
@@ -191,7 +204,10 @@ def _generate_answer(context: str, question: str, model: str, history: list[dict
         messages=messages,
         temperature=0.2,
     )
-    return response.choices[0].message.content.strip()
+    content = response.choices[0].message.content
+    if not content or not content.strip():
+        raise ValueError("Empty completion from OpenAI")
+    return content.strip()
 
 
 def _make_fallback(bot: Bot) -> dict[str, Any]:
