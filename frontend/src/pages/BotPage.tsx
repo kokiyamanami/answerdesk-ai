@@ -190,10 +190,14 @@ export default function BotPage() {
         </p>
         <div style={{ display: 'flex', gap: 10, flexWrap: 'wrap' }}>
           {[
-            { value: 'gpt-4.1-mini', label: 'GPT-4.1 mini', desc: '高速・低コスト' },
-            { value: 'gpt-4.1',      label: 'GPT-4.1',      desc: '高精度' },
-            { value: 'gpt-4o-mini',  label: 'GPT-4o mini',  desc: '高速・低コスト' },
-            { value: 'gpt-4o',       label: 'GPT-4o',       desc: '高精度' },
+            { value: 'gpt-4.1-mini', label: 'GPT-4.1 mini', cost: '低', accuracy: '標準〜良', tag: '推奨',
+              desc: 'FAQボットはナレッジを渡して回答するため、通常はこれで十分。' },
+            { value: 'gpt-4.1',      label: 'GPT-4.1',      cost: '高（4.1 mini の約5倍）', accuracy: '高',
+              desc: '言い回しが難しい質問や、要約・整形が多い場合に。' },
+            { value: 'gpt-4o-mini',  label: 'GPT-4o mini',  cost: '最安（4.1 mini の約半分）', accuracy: '標準',
+              desc: 'コストを最優先したい場合。' },
+            { value: 'gpt-4o',       label: 'GPT-4o',       cost: '最高', accuracy: '高',
+              desc: '4.1 が出た現在、あえて選ぶ理由は小さい。' },
           ].map(m => {
             const selected = (form.ai_model || 'gpt-4.1-mini') === m.value
             return (
@@ -202,19 +206,35 @@ export default function BotPage() {
                 onClick={() => setForm(f => ({ ...f, ai_model: m.value }))}
                 style={{
                   border: selected ? '2px solid var(--brand)' : '2px solid var(--gray-200)',
-                  borderRadius: 10, padding: '12px 16px', minWidth: 130,
+                  borderRadius: 10, padding: '12px 16px', width: 210,
                   background: selected ? '#eef2ff' : '#fff',
                   cursor: 'pointer',
                   position: 'relative',
                   transition: 'all 0.15s',
                 }}
               >
-                <div style={{ fontSize: 13, fontWeight: 700, color: 'var(--gray-800)', marginBottom: 2 }}>{m.label}</div>
-                <div style={{ fontSize: 11, color: 'var(--gray-500)' }}>{m.desc}</div>
+                <div style={{ display: 'flex', alignItems: 'center', gap: 6, marginBottom: 4 }}>
+                  <span style={{ fontSize: 13, fontWeight: 700, color: 'var(--gray-800)' }}>{m.label}</span>
+                  {m.tag && (
+                    <span style={{
+                      fontSize: 10, fontWeight: 700, color: 'var(--brand)',
+                      background: '#eef2ff', borderRadius: 4, padding: '1px 5px',
+                    }}>{m.tag}</span>
+                  )}
+                </div>
+                <div style={{ fontSize: 11, color: 'var(--gray-600)', marginBottom: 4 }}>
+                  コスト: {m.cost}<br />精度: {m.accuracy}
+                </div>
+                <div style={{ fontSize: 11, color: 'var(--gray-500)', lineHeight: 1.5 }}>{m.desc}</div>
               </div>
             )
           })}
         </div>
+        <p style={{ fontSize: 12, color: 'var(--gray-500)', marginTop: 12, lineHeight: 1.6 }}>
+          💡 このボットは登録済みのFAQ・ドキュメントを根拠に回答するため、モデルによる差は出にくいです。
+          まずは GPT-4.1 mini で運用し、回答の質に不満があれば GPT-4.1 に上げてください。
+          コストの倍率は目安です（正確な単価は OpenAI の料金ページを参照）。
+        </p>
       </div>
 
       {/* AI感度設定 */}
