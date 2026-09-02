@@ -1,5 +1,5 @@
 import api from '../lib/api'
-import type { Bot, ThemePreset, FAQ, Document, ConversationSummary, ChatResponse, User, FormSubmission } from '../types/api'
+import type { Bot, ThemePreset, FAQ, Document, ConversationSummary, ChatResponse, User, FormSubmission, TestQuestion } from '../types/api'
 
 // Extract a human-readable error message from an Axios error.
 // Handles: Pydantic 422 arrays, custom {message:} objects, plain strings.
@@ -43,6 +43,17 @@ export const createFaq = (data: { question: string; answer: string; category?: s
 export const updateFaq = (id: string, data: Partial<FAQ>) =>
   api.patch<FAQ>(`/faqs/${id}`, data).then(r => r.data)
 export const deleteFaq = (id: string) => api.delete(`/faqs/${id}`)
+export const exportFaqsCsv = () =>
+  api.get('/faqs/export', { responseType: 'blob' }).then(r => r.data as Blob)
+export const importFaqsCsv = (file: File) => {
+  const form = new FormData()
+  form.append('file', file)
+  return api
+    .post<{ created: number; skipped: number; errors: string[] }>('/faqs/import', form, {
+      headers: { 'Content-Type': 'multipart/form-data' },
+    })
+    .then(r => r.data)
+}
 
 // Document
 export const fetchDocuments = () => api.get<Document[]>('/documents').then(r => r.data)
@@ -72,3 +83,14 @@ export const sendPublicMessage = (slug: string, conversationId: string, message:
   api.post<ChatResponse>(`/public/bots/${slug}/messages`, { conversation_id: conversationId, message }).then(r => r.data)
 export const submitPublicForm = (slug: string, conversationId: string | null, data: Record<string, string>) =>
   api.post(`/public/bots/${slug}/form-submissions`, { conversation_id: conversationId, data }).then(r => r.data)
+
+// Accuracy test
+export const fetchTestQuestions = () =>
+  api.get<TestQuestion[]>('/test-questions').then(r => r.data)
+export const createTestQuestion = (data: { question: string; note?: string }) =>
+  api.post<TestQuestion>('/test-questions', data).then(r => r.data)
+export const updateTestQuestion = (id: string, data: { question?: string; note?: string }) =>
+  api.patch<TestQuestion>(`/test-questions/${id}`, data).then(r => r.data)
+export const deleteTestQuestion = (id: string) => api.delete(`/test-questions/${id}`)
+export const runTestQuestions = () =>
+  api.post<TestQuestion[]>('/test-questions/run').then(r => r.data)

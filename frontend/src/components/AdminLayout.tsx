@@ -10,6 +10,7 @@ const NAV_ITEMS = [
   { to: '/app/contact',          icon: '📬', label: '問い合わせ' },
   { to: '/app/faqs',             icon: '💬', label: 'FAQ' },
   { to: '/app/documents',        icon: '📄', label: 'ドキュメント' },
+  { to: '/app/accuracy',         icon: '🧪', label: '精度テスト' },
   { to: '/app/conversations',    icon: '🗂️', label: '会話ログ' },
   { to: '/app/form-submissions', icon: '📩', label: 'フォーム送信' },
 ]

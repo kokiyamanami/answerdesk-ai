@@ -1,11 +1,8 @@
-import { useEffect, useState } from 'react'
+import { useEffect, useRef, useState } from 'react'
 import { useNavigate, useParams } from 'react-router-dom'
-import { fetchFaqs, createFaq, updateFaq, deleteFaq, fetchBot, extractApiError } from '../lib/apiClient'
+import { fetchFaqs, createFaq, updateFaq, deleteFaq, fetchBot, extractApiError, exportFaqsCsv, importFaqsCsv } from '../lib/apiClient'
 import type { FAQ } from '../types/api'
 import { INDUSTRIES, FAQ_TEMPLATES, type FAQTemplate } from '../data/faqTemplates'
-import UpgradeModal from '../components/UpgradeModal'
-
-const FAQ_LIMIT = 20
 
 function TemplateModal({ industry, onClose, onAdd }: {
   industry: string
@@ -101,7 +98,6 @@ export default function FAQPage() {
   const [loading, setLoading] = useState(true)
   const [industry, setIndustry] = useState<string | null>(null)
   const [showTemplate, setShowTemplate] = useState(false)
-  const [showUpgradeModal, setShowUpgradeModal] = useState(false)
   const navigate = useNavigate()
 
   useEffect(() => {
@@ -127,7 +123,48 @@ export default function FAQPage() {
     setFaqs(f => [...f, ...created])
   }
 
-  const atLimit = faqs.length >= FAQ_LIMIT
+  const fileInputRef = useRef<HTMLInputElement>(null)
+  const [ioBusy, setIoBusy] = useState(false)
+  const [ioMsg, setIoMsg] = useState<{ type: 'success' | 'error'; text: string } | null>(null)
+
+  const handleExport = async () => {
+    setIoMsg(null)
+    try {
+      const blob = await exportFaqsCsv()
+      const url = URL.createObjectURL(blob)
+      const a = document.createElement('a')
+      a.href = url
+      a.download = `faqs-${new Date().toISOString().slice(0, 10)}.csv`
+      a.click()
+      URL.revokeObjectURL(url)
+    } catch (err) {
+      setIoMsg({ type: 'error', text: extractApiError(err, 'エクスポートに失敗しました。') })
+    }
+  }
+
+  const handleImportFile = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0]
+    e.target.value = ''
+    if (!file) return
+    setIoBusy(true)
+    setIoMsg(null)
+    try {
+      const res = await importFaqsCsv(file)
+      const updated = await fetchFaqs().catch(() => faqs)
+      setFaqs(updated)
+      const parts = [`${res.created}件を追加`]
+      if (res.skipped) parts.push(`${res.skipped}件をスキップ`)
+      if (res.errors.length) parts.push(`エラー${res.errors.length}件`)
+      setIoMsg({
+        type: res.errors.length ? 'error' : 'success',
+        text: parts.join(' / ') + (res.errors.length ? `：${res.errors.slice(0, 3).join('、')}` : ''),
+      })
+    } catch (err) {
+      setIoMsg({ type: 'error', text: extractApiError(err, 'インポートに失敗しました。') })
+    } finally {
+      setIoBusy(false)
+    }
+  }
 
   return (
     <>
@@ -138,29 +175,35 @@ export default function FAQPage() {
           onAdd={handleAddTemplates}
         />
       )}
-      {showUpgradeModal && <UpgradeModal onClose={() => setShowUpgradeModal(false)} />}
       <div>
       <div className="page-header" style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between' }}>
         <div>
           <h1 className="page-title">FAQ管理</h1>
           <p className="page-desc">よくある質問と回答を管理します。</p>
         </div>
-        <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-          <span style={{ fontSize: 12, color: atLimit ? 'var(--red)' : 'var(--gray-400)' }}>
-            {faqs.length} / {FAQ_LIMIT}件
-          </span>
+        <div style={{ display: 'flex', alignItems: 'center', gap: 8, flexWrap: 'wrap' }}>
+          <span style={{ fontSize: 12, color: 'var(--gray-400)' }}>{faqs.length}件</span>
+          <input ref={fileInputRef} type="file" accept=".csv,text/csv" style={{ display: 'none' }} onChange={handleImportFile} />
+          <button className="btn btn-secondary" disabled={ioBusy}
+            onClick={() => fileInputRef.current?.click()}>
+            {ioBusy ? 'インポート中…' : '⬆ CSVインポート'}
+          </button>
+          <button className="btn btn-secondary" onClick={handleExport}>⬇ CSVエクスポート</button>
           {industry && (
-            <button className="btn btn-secondary"
-              onClick={() => atLimit ? setShowUpgradeModal(true) : setShowTemplate(true)}>
+            <button className="btn btn-secondary" onClick={() => setShowTemplate(true)}>
               📋 テンプレートから追加
             </button>
           )}
-          <button className="btn btn-primary"
-            onClick={() => atLimit ? setShowUpgradeModal(true) : navigate('/app/faqs/new')}>
+          <button className="btn btn-primary" onClick={() => navigate('/app/faqs/new')}>
             ＋ 新規追加
           </button>
         </div>
       </div>
+      {ioMsg && (
+        <div className={`alert alert-${ioMsg.type === 'success' ? 'success' : 'error'}`} style={{ marginBottom: 16 }}>
+          {ioMsg.text}
+        </div>
+      )}
 
       <div className="card" style={{ padding: 0 }}>
         {loading ? (

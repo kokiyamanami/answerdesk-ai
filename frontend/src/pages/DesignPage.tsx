@@ -1,7 +1,6 @@
 import { useEffect, useRef, useState } from 'react'
 import { fetchBot, updateBot, fetchThemes, uploadBotIcon, extractApiError } from '../lib/apiClient'
 import type { Bot, ThemePreset } from '../types/api'
-import UpgradeModal from '../components/UpgradeModal'
 
 export default function DesignPage() {
   const [bot, setBot] = useState<Bot | null>(null)
@@ -9,7 +8,6 @@ export default function DesignPage() {
   const [form, setForm] = useState<Partial<Bot>>({})
   const [saving, setSaving] = useState(false)
   const [iconUploading, setIconUploading] = useState(false)
-  const [showUpgradeModal, setShowUpgradeModal] = useState(false)
   const [alert, setAlert] = useState<{ type: 'success' | 'error'; msg: string } | null>(null)
   const iconInputRef = useRef<HTMLInputElement>(null)
 
@@ -56,7 +54,6 @@ export default function DesignPage() {
 
   return (
     <>
-      {showUpgradeModal && <UpgradeModal onClose={() => setShowUpgradeModal(false)} />}
     <div>
       <div className="page-header">
         <h1 className="page-title">デザイン設定</h1>
@@ -132,31 +129,6 @@ export default function DesignPage() {
                     <div style={{ fontSize: 12, fontWeight: 600, color: 'var(--gray-700)' }}>{t.name}</div>
                   </div>
                 ))}
-
-                {/* その他の色（有料） */}
-                <div
-                  onClick={() => setShowUpgradeModal(true)}
-                  style={{
-                    border: '2px dashed var(--gray-200)',
-                    borderRadius: 10, padding: '12px 14px',
-                    cursor: 'pointer', minWidth: 90,
-                    background: 'var(--gray-50)',
-                    transition: 'border-color 0.15s',
-                    position: 'relative',
-                  }}
-                >
-                  <div style={{
-                    width: 22, height: 22, borderRadius: '50%', marginBottom: 6,
-                    background: 'conic-gradient(#f87171, #fb923c, #facc15, #4ade80, #60a5fa, #a78bfa, #f87171)',
-                    boxShadow: '0 1px 3px rgba(0,0,0,.15)',
-                  }} />
-                  <div style={{ fontSize: 12, fontWeight: 600, color: 'var(--gray-400)' }}>その他</div>
-                  <span style={{
-                    position: 'absolute', top: 5, right: 6,
-                    fontSize: 9, fontWeight: 700, color: 'var(--gray-400)',
-                    background: 'var(--gray-100)', borderRadius: 4, padding: '1px 4px',
-                  }}>🔒 有料</span>
-                </div>
               </div>
             </div>
 

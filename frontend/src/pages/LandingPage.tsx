@@ -10,61 +10,6 @@ const FEATURES = [
   { icon: '📱', title: 'スマホでも使いやすい', desc: '公開チャット画面はスマホ・タブレット・PCすべてに対応しています。' },
 ]
 
-const PLANS = [
-  {
-    name: '無料プラン',
-    price: '¥0',
-    period: '/ 月',
-    badge: '今すぐ使える',
-    badgeCls: 'badge-green',
-    features: [
-      'ボット 1つ',
-      'FAQ 手入力',
-      'PDFアップロード',
-      'プリセットテーマ',
-      '公開URL発行',
-      'テストチャット',
-    ],
-    cta: '無料で始める',
-    ctaTo: '/register',
-    primary: true,
-  },
-  {
-    name: 'スタンダード',
-    price: '準備中',
-    period: '',
-    badge: 'Coming Soon',
-    badgeCls: 'badge-amber',
-    features: [
-      '複数ボット',
-      'カスタムテーマ',
-      'アイコンアップロード',
-      '会話ログ詳細分析',
-      '優先サポート',
-    ],
-    cta: '通知を受け取る',
-    ctaTo: '#contact',
-    primary: false,
-  },
-  {
-    name: 'カスタマイズ',
-    price: 'お問い合わせ',
-    period: '',
-    badge: 'Coming Soon',
-    badgeCls: 'badge-gray',
-    features: [
-      'ボット無制限',
-      '独自ドメイン対応',
-      'API連携',
-      'SSO対応',
-      '専任サポート',
-    ],
-    cta: 'お問い合わせ',
-    ctaTo: '#contact',
-    primary: false,
-  },
-]
-
 export default function LandingPage() {
   return (
     <div style={{ fontFamily: "'Inter','Hiragino Sans','Noto Sans JP',system-ui,sans-serif", color: 'var(--gray-800)', background: '#fff' }}>
@@ -105,7 +50,7 @@ export default function LandingPage() {
         textAlign: 'center',
       }}>
         <span className="badge badge-indigo" style={{ marginBottom: 20, fontSize: 12 }}>
-          🚀 無料プラン提供中
+          🚀 社内向けAIチャットボット
         </span>
         <h1 style={{
           fontSize: 'clamp(32px, 5vw, 56px)', fontWeight: 800,
@@ -196,60 +141,6 @@ export default function LandingPage() {
               </div>
             ))}
           </div>
-        </div>
-      </section>
-
-      {/* ===== Plans ===== */}
-      <section style={{ padding: '80px 32px', maxWidth: 1100, margin: '0 auto' }}>
-        <div style={{ textAlign: 'center', marginBottom: 52 }}>
-          <h2 style={{ fontSize: 'clamp(22px, 3vw, 34px)', fontWeight: 700, color: 'var(--gray-900)', margin: '0 0 12px', letterSpacing: '-0.5px' }}>
-            プラン
-          </h2>
-          <p style={{ fontSize: 15, color: 'var(--gray-500)' }}>まずは無料プランでお試しください。</p>
-        </div>
-        <div style={{
-          display: 'grid',
-          gridTemplateColumns: 'repeat(auto-fit, minmax(260px, 1fr))',
-          gap: 24, alignItems: 'start',
-        }}>
-          {PLANS.map(p => (
-            <div key={p.name} className="card" style={{
-              padding: '32px 28px',
-              border: p.primary ? '2px solid var(--brand)' : '1px solid var(--gray-200)',
-              position: 'relative',
-            }}>
-              {p.primary && (
-                <div style={{
-                  position: 'absolute', top: -12, left: '50%', transform: 'translateX(-50%)',
-                  background: 'var(--brand)', color: '#fff',
-                  fontSize: 11, fontWeight: 700, padding: '3px 12px', borderRadius: 100,
-                  whiteSpace: 'nowrap',
-                }}>おすすめ</div>
-              )}
-              <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 8 }}>
-                <span style={{ fontSize: 15, fontWeight: 700, color: 'var(--gray-900)' }}>{p.name}</span>
-                <span className={`badge ${p.badgeCls}`}>{p.badge}</span>
-              </div>
-              <div style={{ marginBottom: 24 }}>
-                <span style={{ fontSize: 32, fontWeight: 800, color: 'var(--gray-900)', letterSpacing: '-1px' }}>{p.price}</span>
-                <span style={{ fontSize: 14, color: 'var(--gray-500)' }}>{p.period}</span>
-              </div>
-              <ul style={{ listStyle: 'none', padding: 0, margin: '0 0 28px', display: 'flex', flexDirection: 'column', gap: 10 }}>
-                {p.features.map(f => (
-                  <li key={f} style={{ fontSize: 14, color: 'var(--gray-600)', display: 'flex', alignItems: 'center', gap: 8 }}>
-                    <span style={{ color: 'var(--green)', fontWeight: 700 }}>✓</span> {f}
-                  </li>
-                ))}
-              </ul>
-              <Link
-                to={p.ctaTo}
-                className={p.primary ? 'btn btn-primary' : 'btn btn-secondary'}
-                style={{ display: 'block', textAlign: 'center', textDecoration: 'none' }}
-              >
-                {p.cta}
-              </Link>
-            </div>
-          ))}
         </div>
       </section>
 
