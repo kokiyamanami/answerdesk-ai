@@ -76,7 +76,7 @@ function StaffContactModal({
     }}>
       <div onClick={e => e.stopPropagation()} style={{
         background: '#fff', borderRadius: 14, padding: 22, width: 420, maxWidth: '100%',
-        maxHeight: '90vh', overflowY: 'auto', color: '#1e293b',
+        maxHeight: '90vh', overflowY: 'auto', color: '#1e293b', colorScheme: 'light',
       }}>
         {done ? (
           <div style={{ textAlign: 'center', padding: '12px 0' }}>
@@ -89,7 +89,7 @@ function StaffContactModal({
           </div>
         ) : (
           <>
-            <h2 style={{ fontSize: 16, fontWeight: 700, margin: '0 0 4px' }}>スタッフに問い合わせ</h2>
+            <h2 style={{ fontSize: 16, fontWeight: 700, margin: '0 0 4px', color: '#0f172a' }}>スタッフに問い合わせ</h2>
             <p style={{ fontSize: 12, color: '#64748b', margin: '0 0 16px' }}>
               内容を送信すると担当者に届きます。これまでの会話内容も一緒に共有されます。
             </p>
@@ -101,6 +101,7 @@ function StaffContactModal({
                 const st: React.CSSProperties = {
                   width: '100%', boxSizing: 'border-box', padding: '8px 10px', fontSize: 13,
                   border: '1px solid #cbd5e1', borderRadius: 8, fontFamily: 'inherit',
+                  background: '#fff', color: '#1e293b',
                   outline: 'none', resize: 'vertical',
                 }
                 return (
