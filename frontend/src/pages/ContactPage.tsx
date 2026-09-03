@@ -28,6 +28,7 @@ export default function ContactPage() {
       const updated = await updateBot({
         fallback_enabled: form.fallback_enabled,
         fallback_message: form.fallback_message,
+        clarify_message: form.clarify_message,
         fallback_contact_url: form.fallback_contact_url,
         fallback_contact_email: form.fallback_contact_email,
         form_fields: formFields,
@@ -75,6 +76,17 @@ export default function ContactPage() {
             </div>
 
             <hr className="divider" />
+
+            <div className="form-field">
+              <label className="form-label">聞き返しメッセージ</label>
+              <textarea className="form-textarea" style={{ maxWidth: 560 }}
+                value={form.clarify_message || ''}
+                onChange={e => setForm(f => ({ ...f, clarify_message: e.target.value }))}
+                placeholder="ご質問の意図をもう少し詳しく教えていただけますか？（対象や状況など）" />
+              <span className="form-hint">
+                回答が見つからなかった時、いきなり問い合わせ誘導せず一度だけこの文で聞き返します。それでも見つからなければ下のフォールバックに進みます。空欄なら既定文を使用。
+              </span>
+            </div>
 
             <div className="form-field">
               <label className="form-label">フォールバックメッセージ</label>

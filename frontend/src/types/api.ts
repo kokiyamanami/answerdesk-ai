@@ -18,6 +18,8 @@ export interface Bot {
   fallback_message: string
   fallback_contact_url: string | null
   fallback_contact_email: string | null
+  clarify_message: string | null
+  persona: string | null
   status: string
   rag_score_threshold: number
   ai_model: string

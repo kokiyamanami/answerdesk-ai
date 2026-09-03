@@ -23,6 +23,8 @@ class Bot(Base):
     fallback_message = Column(Text, nullable=False, default="申し訳ありませんが、お答えできませんでした。お問い合わせください。")
     fallback_contact_url = Column(Text, nullable=True)
     fallback_contact_email = Column(String(255), nullable=True)
+    clarify_message = Column(Text, nullable=True)  # 一度も答えられない時に一回だけ返す聞き返し文
+    persona = Column(Text, nullable=True)  # 役割・口調の指示。回答生成のシステムプロンプトに注入
     rag_score_threshold = Column("rag_score_threshold", __import__('sqlalchemy').Float, nullable=False, default=0.5)
     ai_model = Column(String(50), nullable=False, default="gpt-4.1-mini")
     industry = Column(String(50), nullable=True)

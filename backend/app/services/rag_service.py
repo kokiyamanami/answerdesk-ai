@@ -18,13 +18,15 @@ from app.services.embedding_service import generate_embedding
 logger = logging.getLogger(__name__)
 
 SYSTEM_PROMPT = """あなたはFAQチャットボットです。
-以下の「参考情報」のみを根拠として回答してください。
+{persona}以下の「参考情報」のみを根拠として回答してください。
 参考情報にない内容は推測や補完をせず、回答できない旨を伝えてください。
 回答は簡潔な日本語で行ってください。
 
 参考情報:
 {context}
 """
+
+DEFAULT_CLARIFY_MESSAGE = "ご質問の意図をもう少し詳しく教えていただけますか？（対象や状況など）"
 
 FALLBACK_JUDGMENT_PROMPT = """以下の参考情報をもとに質問に答えられますか？
 答えられる場合は「YES」、答えられない場合は「NO」とだけ答えてください。
@@ -86,21 +88,22 @@ def answer_question(
     # 4. pgvector 類似検索
     chunks = _vector_search(bot_id=bot.id, embedding=q_embedding, db=db)
 
-    # 5. 未ヒット判定（スコア閾値）
+    # 5. 未ヒット判定（スコア閾値）: 初回のミスは即フォールバックせず一度だけ聞き返す
     threshold = bot.rag_score_threshold if bot.rag_score_threshold is not None else settings.rag_score_threshold
     if not chunks or chunks[0]["score"] < threshold:
-        return _make_fallback(bot)
+        return _clarify_or_fallback(bot, conversation, db)
 
     # 6. コンテキスト組み立て
     context = _build_context(chunks)
 
     # 7. LLM で未ヒット判定
     if _is_fallback_by_llm(context=context, question=question, model=model):
-        return _make_fallback(bot)
+        return _clarify_or_fallback(bot, conversation, db)
 
     # 8. 回答生成（OpenAI 側の一時的な障害時は 500 ではなく fallback に落とす）
     try:
-        answer = _generate_answer(context=context, question=question, model=model, history=history)
+        answer = _generate_answer(context=context, question=question, model=model,
+                                  history=history, persona=bot.persona)
     except Exception:
         logger.exception("Answer generation failed; returning fallback")
         return _make_fallback(bot)
@@ -112,6 +115,30 @@ def answer_question(
                         "score": c["score"]} for c in chunks],
         "retrieval_score": chunks[0]["score"],
     }
+
+
+def _last_assistant_was_clarify(conversation: "Conversation", db: Session) -> bool:
+    last = (
+        db.query(Message)
+        .filter(Message.conversation_id == conversation.id, Message.role == "assistant")
+        .order_by(Message.created_at.desc())
+        .first()
+    )
+    return bool(last and last.message_type == "clarify")
+
+
+def _clarify_or_fallback(bot: Bot, conversation: "Conversation | None", db: Session) -> dict[str, Any]:
+    """初回のミスは聞き返し、直前が聞き返しだった（=2回連続ミス）ら本フォールバック。
+    会話がない単発呼び出しは即フォールバック。"""
+    if conversation and not _last_assistant_was_clarify(conversation, db):
+        return {
+            "answer": (bot.clarify_message or "").strip() or DEFAULT_CLARIFY_MESSAGE,
+            "fallback": False,
+            "clarify": True,
+            "citations": [],
+            "retrieval_score": None,
+        }
+    return _make_fallback(bot)
 
 
 def _fetch_history(conversation: "Conversation", db: Session, limit: int = 6) -> list[dict]:
@@ -192,9 +219,11 @@ def _is_fallback_by_llm(context: str, question: str, model: str) -> bool:
         return False
 
 
-def _generate_answer(context: str, question: str, model: str, history: list[dict] | None = None) -> str:
+def _generate_answer(context: str, question: str, model: str, history: list[dict] | None = None,
+                     persona: str | None = None) -> str:
     client = OpenAI(api_key=settings.openai_api_key, timeout=settings.openai_request_timeout_seconds)
-    system = SYSTEM_PROMPT.format(context=context)
+    persona_block = f"{persona.strip()}\n" if persona and persona.strip() else ""
+    system = SYSTEM_PROMPT.format(context=context, persona=persona_block)
     messages = [{"role": "system", "content": system}]
     if history:
         messages.extend(history)
@@ -247,15 +276,21 @@ def save_messages(
     db.flush()
 
     # AI メッセージ
+    if rag_result.get("clarify"):
+        msg_type = "clarify"
+    elif rag_result["fallback"]:
+        msg_type = "fallback"
+    else:
+        msg_type = "normal"
     ai_msg = Message(
         conversation_id=conversation.id,
         bot_id=bot.id,
         role="assistant",
-        message_type="fallback" if rag_result["fallback"] else "normal",
+        message_type=msg_type,
         content=rag_result["answer"],
         retrieval_score=rag_result["retrieval_score"],
         fallback_triggered=rag_result["fallback"],
-        model_name=settings.openai_chat_model if not rag_result["fallback"] else None,
+        model_name=settings.openai_chat_model if msg_type == "normal" else None,
     )
     db.add(ai_msg)
     db.flush()
