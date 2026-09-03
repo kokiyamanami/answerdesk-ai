@@ -83,6 +83,27 @@ export default function PublicChatPage() {
     bottomRef.current?.scrollIntoView({ behavior: 'smooth' })
   }, [messages, sending])
 
+  // タブのタイトルとファビコンをボットに合わせる
+  useEffect(() => {
+    if (!bot) return
+    const prevTitle = document.title
+    const link: HTMLLinkElement =
+      document.querySelector("link[rel~='icon']") ?? document.head.appendChild(Object.assign(document.createElement('link'), { rel: 'icon' }))
+    const prevHref = link.getAttribute('href')
+    const prevType = link.getAttribute('type')
+
+    if (bot.chat_title) document.title = bot.chat_title
+    if (bot.icon_url) {
+      link.setAttribute('href', bot.icon_url)
+      link.removeAttribute('type')
+    }
+    return () => {
+      document.title = prevTitle
+      if (prevHref) link.setAttribute('href', prevHref)
+      if (prevType) link.setAttribute('type', prevType)
+    }
+  }, [bot])
+
   useEffect(() => {
     const el = textareaRef.current
     if (!el) return
