@@ -14,6 +14,7 @@ interface BotInfo {
   chat_title: string
   icon_url: string | null
   welcome_message: string | null
+  description: string | null
   form_fields: FormFieldConfig[] | null
   theme: {
     background_color: string
@@ -319,10 +320,16 @@ export default function PublicChatPage() {
           <div style={{ fontWeight: 700, fontSize: 15, lineHeight: 1.3 }}>
             {bot?.chat_title || bot?.name || ''}
           </div>
-          <div style={{ fontSize: 11, opacity: 0.8, display: 'flex', alignItems: 'center', gap: 4 }}>
-            <span style={{ width: 6, height: 6, borderRadius: '50%', background: '#4ade80', display: 'inline-block' }} />
-            オンライン
-          </div>
+          {bot?.description ? (
+            <div style={{ fontSize: 11, opacity: 0.85, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', maxWidth: 340 }}>
+              {bot.description}
+            </div>
+          ) : (
+            <div style={{ fontSize: 11, opacity: 0.8, display: 'flex', alignItems: 'center', gap: 4 }}>
+              <span style={{ width: 6, height: 6, borderRadius: '50%', background: '#4ade80', display: 'inline-block' }} />
+              オンライン
+            </div>
+          )}
         </div>
         <button
           onClick={() => setContactOpen(true)}

@@ -13,6 +13,7 @@ export interface Bot {
   chat_title: string
   icon_url: string | null
   welcome_message: string | null
+  description: string | null
   theme_preset_id: string | null
   fallback_enabled: boolean
   fallback_message: string

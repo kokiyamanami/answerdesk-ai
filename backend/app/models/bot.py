@@ -18,6 +18,7 @@ class Bot(Base):
     chat_title = Column(String(255), nullable=False)
     icon_url = Column(Text, nullable=True)
     welcome_message = Column(Text, nullable=True)
+    description = Column(Text, nullable=True)  # 「何が得意か」等の説明。チャット画面のタイトル下に表示
     theme_preset_id = Column(UUID(as_uuid=True), ForeignKey("theme_presets.id", ondelete="SET NULL"), nullable=True)
     fallback_enabled = Column(Boolean, nullable=False, default=True)
     fallback_message = Column(Text, nullable=False, default="申し訳ありませんが、お答えできませんでした。お問い合わせください。")

@@ -26,6 +26,7 @@ export default function DesignPage() {
     try {
       const updated = await updateBot({
         chat_title: form.chat_title,
+        description: form.description,
         welcome_message: form.welcome_message,
         theme_preset_id: form.theme_preset_id,
       })
@@ -144,6 +145,18 @@ export default function DesignPage() {
               <span className="form-hint">チャット画面のヘッダーに表示されます。</span>
             </div>
 
+            <div className="form-field">
+              <label className="form-label">説明文</label>
+              <input
+                className="form-input"
+                style={{ maxWidth: 480 }}
+                value={form.description || ''}
+                onChange={e => setForm(f => ({ ...f, description: e.target.value }))}
+                placeholder="例: 受講に関する質問にお答えします（返金・課題・アプリの使い方など）"
+              />
+              <span className="form-hint">チャット画面のタイトル下に表示されます。何が得意かを一言で。空欄なら「オンライン」表示になります。</span>
+            </div>
+
             <div className="form-field" style={{ marginBottom: 0 }}>
               <label className="form-label">初期メッセージ</label>
               <textarea
@@ -201,10 +214,16 @@ export default function DesignPage() {
                 <div style={{ fontWeight: 700, fontSize: 13, lineHeight: 1.3 }}>
                   {form.chat_title || 'チャット'}
                 </div>
-                <div style={{ fontSize: 10, opacity: 0.8, display: 'flex', alignItems: 'center', gap: 3 }}>
-                  <span style={{ width: 5, height: 5, borderRadius: '50%', background: '#4ade80', display: 'inline-block' }} />
-                  オンライン
-                </div>
+                {form.description ? (
+                  <div style={{ fontSize: 10, opacity: 0.85, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', maxWidth: 200 }}>
+                    {form.description}
+                  </div>
+                ) : (
+                  <div style={{ fontSize: 10, opacity: 0.8, display: 'flex', alignItems: 'center', gap: 3 }}>
+                    <span style={{ width: 5, height: 5, borderRadius: '50%', background: '#4ade80', display: 'inline-block' }} />
+                    オンライン
+                  </div>
+                )}
               </div>
             </div>
             {/* Body */}
