@@ -7,6 +7,13 @@ import { useAuth } from '../contexts/AuthContext'
 
 const BASE_URL = window.location.origin + '/c/'
 
+const PERSONA_PRESETS = [
+  { label: 'カスタマーサポート', text: 'カスタマーサポート担当として、丁寧で共感的な口調で応対してください。相手の困りごとにまず一言寄り添ってから、参考情報に基づいて回答してください。' },
+  { label: '社内ヘルプデスク', text: '社内向けヘルプデスクとして、簡潔かつ実務的に回答してください。前置きは短めにし、手順は箇条書きでまとめてください。' },
+  { label: '販売・案内', text: '商品・サービスの案内担当として、明るく前向きな口調で回答してください。押し売りはせず、相手が判断できる情報を過不足なく伝えてください。' },
+  { label: '事務的・簡潔', text: '事実のみを簡潔に、敬語で回答してください。感想や余計な補足は入れないでください。' },
+]
+
 export default function BotPage() {
   const { bots, currentBotId, refetchBots } = useAuth()
   const navigate = useNavigate()
@@ -156,6 +163,38 @@ export default function BotPage() {
             </span>
           </div>
         </div>
+      </div>
+
+      {/* キャラクター / 役割 */}
+      <div className="card" style={{ marginTop: 24 }}>
+        <h2 style={{ fontSize: 15, fontWeight: 700, marginBottom: 4, color: 'var(--gray-800)' }}>キャラクター・役割</h2>
+        <p style={{ fontSize: 13, color: 'var(--gray-500)', marginBottom: 12 }}>
+          回答の口調やスタンスを指定します。空欄なら標準（簡潔なFAQ回答）です。参考情報に無いことは答えない、という基本方針は変わりません。
+        </p>
+        <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap', marginBottom: 12 }}>
+          {PERSONA_PRESETS.map(p => (
+            <button
+              key={p.label}
+              type="button"
+              className="btn btn-secondary btn-sm"
+              onClick={() => setForm(f => ({ ...f, persona: p.text }))}
+            >
+              {p.label}
+            </button>
+          ))}
+          <button type="button" className="btn btn-secondary btn-sm"
+            onClick={() => setForm(f => ({ ...f, persona: '' }))}>
+            クリア
+          </button>
+        </div>
+        <textarea
+          className="form-textarea"
+          style={{ maxWidth: 560 }}
+          rows={4}
+          value={form.persona || ''}
+          onChange={e => setForm(f => ({ ...f, persona: e.target.value }))}
+          placeholder="例: カスタマーサポート担当として、丁寧で共感的な口調で応対してください。相手の困りごとにまず一言寄り添ってから回答してください。"
+        />
       </div>
 
       {/* 業界設定 */}

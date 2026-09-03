@@ -38,6 +38,8 @@ class BotResponse(BaseModel):
     fallback_message: str
     fallback_contact_url: Optional[str]
     fallback_contact_email: Optional[str]
+    clarify_message: Optional[str] = None
+    persona: Optional[str] = None
     status: str
     rag_score_threshold: float
     ai_model: str
@@ -70,6 +72,8 @@ class BotUpdateRequest(BaseModel):
     fallback_message: Optional[str] = None
     fallback_contact_url: Optional[str] = None
     fallback_contact_email: Optional[str] = None
+    clarify_message: Optional[str] = None
+    persona: Optional[str] = None
     rag_score_threshold: Optional[float] = None
     ai_model: Optional[str] = None
     industry: Optional[str] = None
@@ -101,6 +105,8 @@ def _bot_to_response(bot: Bot) -> BotResponse:
         fallback_message=bot.fallback_message,
         fallback_contact_url=bot.fallback_contact_url,
         fallback_contact_email=bot.fallback_contact_email,
+        clarify_message=bot.clarify_message,
+        persona=bot.persona,
         status=bot.status,
         rag_score_threshold=bot.rag_score_threshold if bot.rag_score_threshold is not None else 0.5,
         ai_model=bot.ai_model or "gpt-4.1-mini",
