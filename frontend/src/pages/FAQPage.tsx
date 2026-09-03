@@ -99,8 +99,22 @@ export default function FAQPage() {
   const [loading, setLoading] = useState(true)
   const [industry, setIndustry] = useState<string | null>(null)
   const [showTemplate, setShowTemplate] = useState(false)
+  const [query, setQuery] = useState('')
+  const [categoryFilter, setCategoryFilter] = useState('')
   const navigate = useNavigate()
-  const pg = usePagination(faqs)
+
+  const categories = Array.from(new Set(faqs.map(f => f.category).filter(Boolean))) as string[]
+  const q = query.trim().toLowerCase()
+  const filtered = faqs.filter(f => {
+    if (categoryFilter && f.category !== categoryFilter) return false
+    if (!q) return true
+    return (
+      f.question.toLowerCase().includes(q) ||
+      f.answer.toLowerCase().includes(q) ||
+      (f.category ?? '').toLowerCase().includes(q)
+    )
+  })
+  const pg = usePagination(filtered)
 
   useEffect(() => {
     Promise.all([
@@ -184,7 +198,9 @@ export default function FAQPage() {
           <p className="page-desc">よくある質問と回答を管理します。</p>
         </div>
         <div style={{ display: 'flex', alignItems: 'center', gap: 8, flexWrap: 'wrap' }}>
-          <span style={{ fontSize: 12, color: 'var(--gray-400)' }}>{faqs.length}件</span>
+          <span style={{ fontSize: 12, color: 'var(--gray-400)' }}>
+            {filtered.length === faqs.length ? `${faqs.length}件` : `${filtered.length} / ${faqs.length}件`}
+          </span>
           <input ref={fileInputRef} type="file" accept=".csv,text/csv" style={{ display: 'none' }} onChange={handleImportFile} />
           <button className="btn btn-secondary" disabled={ioBusy}
             onClick={() => fileInputRef.current?.click()}>
@@ -207,6 +223,34 @@ export default function FAQPage() {
         </div>
       )}
 
+      {faqs.length > 0 && (
+        <div style={{ display: 'flex', gap: 8, marginBottom: 12, flexWrap: 'wrap' }}>
+          <input
+            className="form-input"
+            style={{ maxWidth: 320, flex: '1 1 220px' }}
+            value={query}
+            onChange={e => setQuery(e.target.value)}
+            placeholder="質問・回答・カテゴリで検索"
+          />
+          {categories.length > 0 && (
+            <select
+              className="form-input"
+              style={{ maxWidth: 200 }}
+              value={categoryFilter}
+              onChange={e => setCategoryFilter(e.target.value)}
+            >
+              <option value="">すべてのカテゴリ</option>
+              {categories.map(c => <option key={c} value={c}>{c}</option>)}
+            </select>
+          )}
+          {(query || categoryFilter) && (
+            <button className="btn btn-secondary" onClick={() => { setQuery(''); setCategoryFilter('') }}>
+              クリア
+            </button>
+          )}
+        </div>
+      )}
+
       <div className="card" style={{ padding: 0 }}>
         {loading ? (
           <p style={{ padding: 24, color: 'var(--gray-400)' }}>読み込み中...</p>
@@ -214,6 +258,10 @@ export default function FAQPage() {
           <div style={{ padding: 48, textAlign: 'center', color: 'var(--gray-400)' }}>
             <div style={{ fontSize: 32, marginBottom: 8 }}>💬</div>
             <p>FAQがありません。「新規追加」から作成してください。</p>
+          </div>
+        ) : filtered.length === 0 ? (
+          <div style={{ padding: 48, textAlign: 'center', color: 'var(--gray-400)' }}>
+            <p>条件に一致するFAQがありません。</p>
           </div>
         ) : (<>
           <table className="data-table">
