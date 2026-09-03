@@ -97,8 +97,6 @@ docker compose down -v && docker compose up -d
 
 ## Docs
 
-- [無料プランPRD](docs/prd/free-plan.md)
-- [有料プランPRD](docs/prd/paid-plan.md)
 - [DB設計](docs/db-design.md)
 - [DDL](docs/ddl.sql)
 - [API設計](docs/api-design.md)
