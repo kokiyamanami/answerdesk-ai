@@ -74,6 +74,22 @@ export interface ConversationSummary {
   latest_user_message: string | null
   latest_assistant_message: string | null
   fallback_triggered: boolean
+  message_count: number
+}
+
+export interface ConversationMessage {
+  id: string
+  role: 'user' | 'assistant' | 'system'
+  content: string
+  fallback_triggered: boolean
+  created_at: string
+}
+
+export interface ConversationDetail {
+  id: string
+  started_at: string
+  last_message_at: string
+  messages: ConversationMessage[]
 }
 
 export interface ChatCitation {

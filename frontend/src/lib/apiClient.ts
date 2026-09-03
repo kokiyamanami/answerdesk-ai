@@ -1,5 +1,5 @@
 import api from '../lib/api'
-import type { Bot, ThemePreset, FAQ, Document, ConversationSummary, ChatResponse, User, FormSubmission, TestQuestion, BotMember, BotSummary } from '../types/api'
+import type { Bot, ThemePreset, FAQ, Document, ConversationSummary, ConversationDetail, ChatResponse, User, FormSubmission, TestQuestion, BotMember, BotSummary } from '../types/api'
 
 // Extract a human-readable error message from an Axios error.
 // Handles: Pydantic 422 arrays, custom {message:} objects, plain strings.
@@ -71,6 +71,8 @@ export const deleteDocument = (id: string) => api.delete(`/documents/${id}`)
 // Conversations
 export const fetchConversations = () =>
   api.get<ConversationSummary[]>('/conversations').then(r => r.data)
+export const fetchConversation = (id: string) =>
+  api.get<ConversationDetail>(`/conversations/${id}`).then(r => r.data)
 
 // Form Submissions (admin)
 export const fetchFormSubmissions = () =>
