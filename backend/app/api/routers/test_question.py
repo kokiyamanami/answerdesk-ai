@@ -3,7 +3,7 @@ from datetime import datetime, timezone
 from typing import Optional
 from uuid import UUID
 
-from fastapi import APIRouter, Depends, HTTPException, status
+from fastapi import APIRouter, Depends, HTTPException, Header, status
 from pydantic import BaseModel
 from sqlalchemy.orm import Session
 
@@ -40,8 +40,8 @@ class TestQuestionUpdateRequest(BaseModel):
     note: Optional[str] = None
 
 
-def _get_bot_or_404(current_user: User, db: Session) -> Bot:
-    return get_user_bot(current_user, db)
+def _get_bot_or_404(current_user: User, db: Session, bot_id: str | None = None) -> Bot:
+    return get_user_bot(current_user, db, bot_id)
 
 
 def _to_response(q: BotTestQuestion) -> TestQuestionResponse:
@@ -53,8 +53,8 @@ def _to_response(q: BotTestQuestion) -> TestQuestionResponse:
 
 
 @router.get("", response_model=list[TestQuestionResponse])
-def list_test_questions(current_user: User = Depends(get_current_user), db: Session = Depends(get_db)):
-    bot = _get_bot_or_404(current_user, db)
+def list_test_questions(current_user: User = Depends(get_current_user), x_bot_id: str | None = Header(None, alias="X-Bot-Id"), db: Session = Depends(get_db)):
+    bot = _get_bot_or_404(current_user, db, x_bot_id)
     rows = (
         db.query(BotTestQuestion)
         .filter(BotTestQuestion.bot_id == bot.id)
@@ -66,8 +66,8 @@ def list_test_questions(current_user: User = Depends(get_current_user), db: Sess
 
 @router.post("", response_model=TestQuestionResponse, status_code=status.HTTP_201_CREATED)
 def create_test_question(body: TestQuestionCreateRequest,
-                         current_user: User = Depends(get_current_user), db: Session = Depends(get_db)):
-    bot = _get_bot_or_404(current_user, db)
+                         current_user: User = Depends(get_current_user), x_bot_id: str | None = Header(None, alias="X-Bot-Id"), db: Session = Depends(get_db)):
+    bot = _get_bot_or_404(current_user, db, x_bot_id)
     question = body.question.strip()
     if not question:
         raise HTTPException(status_code=status.HTTP_422_UNPROCESSABLE_ENTITY,
@@ -81,8 +81,8 @@ def create_test_question(body: TestQuestionCreateRequest,
 
 @router.patch("/{question_id}", response_model=TestQuestionResponse)
 def update_test_question(question_id: str, body: TestQuestionUpdateRequest,
-                         current_user: User = Depends(get_current_user), db: Session = Depends(get_db)):
-    bot = _get_bot_or_404(current_user, db)
+                         current_user: User = Depends(get_current_user), x_bot_id: str | None = Header(None, alias="X-Bot-Id"), db: Session = Depends(get_db)):
+    bot = _get_bot_or_404(current_user, db, x_bot_id)
     q = db.query(BotTestQuestion).filter(
         BotTestQuestion.id == UUID(question_id), BotTestQuestion.bot_id == bot.id).first()
     if not q:
@@ -99,8 +99,8 @@ def update_test_question(question_id: str, body: TestQuestionUpdateRequest,
 
 @router.delete("/{question_id}", status_code=status.HTTP_204_NO_CONTENT)
 def delete_test_question(question_id: str,
-                         current_user: User = Depends(get_current_user), db: Session = Depends(get_db)):
-    bot = _get_bot_or_404(current_user, db)
+                         current_user: User = Depends(get_current_user), x_bot_id: str | None = Header(None, alias="X-Bot-Id"), db: Session = Depends(get_db)):
+    bot = _get_bot_or_404(current_user, db, x_bot_id)
     q = db.query(BotTestQuestion).filter(
         BotTestQuestion.id == UUID(question_id), BotTestQuestion.bot_id == bot.id).first()
     if not q:
@@ -111,10 +111,10 @@ def delete_test_question(question_id: str,
 
 
 @router.post("/run", response_model=list[TestQuestionResponse])
-def run_test_questions(current_user: User = Depends(get_current_user), db: Session = Depends(get_db)):
+def run_test_questions(current_user: User = Depends(get_current_user), x_bot_id: str | None = Header(None, alias="X-Bot-Id"), db: Session = Depends(get_db)):
     """登録済みの全テスト質問を RAG パイプラインに通し、直近結果を更新して返す。
     会話ログには保存しない。"""
-    bot = _get_bot_or_404(current_user, db)
+    bot = _get_bot_or_404(current_user, db, x_bot_id)
     rows = (
         db.query(BotTestQuestion)
         .filter(BotTestQuestion.bot_id == bot.id)

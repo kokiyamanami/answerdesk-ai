@@ -43,15 +43,19 @@ def get_current_user(
     return user
 
 
-def get_user_membership(current_user: User, db: Session) -> tuple[Bot, BotMember]:
-    """current_user が編集権を持つボットと、その所属レコードを返す。
-    複数所属している場合は owner を優先し、次に参加順。"""
-    member = (
-        db.query(BotMember)
-        .filter(BotMember.user_id == current_user.id)
-        .order_by((BotMember.role != ROLE_OWNER), BotMember.created_at)
-        .first()
-    )
+def get_user_membership(current_user: User, db: Session,
+                        bot_id: Optional[str] = None) -> tuple[Bot, BotMember]:
+    """current_user が編集権を持つボットと所属レコードを返す。
+    bot_id 指定時はそのボット（所属していなければ 404）。未指定時は owner 優先→参加順で1つ。"""
+    q = db.query(BotMember).filter(BotMember.user_id == current_user.id)
+    if bot_id:
+        try:
+            bid = UUID(str(bot_id))
+        except (ValueError, TypeError):
+            raise _bot_not_found
+        member = q.filter(BotMember.bot_id == bid).first()
+    else:
+        member = q.order_by((BotMember.role != ROLE_OWNER), BotMember.created_at).first()
     if not member:
         raise _bot_not_found
     bot = db.query(Bot).filter(Bot.id == member.bot_id).first()
@@ -60,31 +64,41 @@ def get_user_membership(current_user: User, db: Session) -> tuple[Bot, BotMember
     return bot, member
 
 
-def get_user_bot(current_user: User, db: Session) -> Bot:
+def get_user_bot(current_user: User, db: Session, bot_id: Optional[str] = None) -> Bot:
     """current_user が編集権を持つボットを返す（無ければ 404）。"""
-    bot, _ = get_user_membership(current_user, db)
+    bot, _ = get_user_membership(current_user, db, bot_id)
     return bot
 
 
-def find_user_bot(current_user: User, db: Session) -> Optional[Bot]:
+def find_user_bot(current_user: User, db: Session, bot_id: Optional[str] = None) -> Optional[Bot]:
     """current_user が編集権を持つボットを返す（無ければ None）。"""
-    member = (
-        db.query(BotMember)
-        .filter(BotMember.user_id == current_user.id)
-        .order_by((BotMember.role != ROLE_OWNER), BotMember.created_at)
-        .first()
-    )
-    if not member:
+    try:
+        return get_user_bot(current_user, db, bot_id)
+    except HTTPException:
         return None
-    return db.query(Bot).filter(Bot.id == member.bot_id).first()
 
 
-def require_bot_owner(current_user: User, db: Session) -> tuple[Bot, BotMember]:
+def require_bot_owner(current_user: User, db: Session,
+                      bot_id: Optional[str] = None) -> tuple[Bot, BotMember]:
     """owner 権限が必要な操作用。owner でなければ 403。"""
-    bot, member = get_user_membership(current_user, db)
+    bot, member = get_user_membership(current_user, db, bot_id)
     if member.role != ROLE_OWNER:
         raise HTTPException(
             status_code=status.HTTP_403_FORBIDDEN,
             detail={"code": "forbidden", "message": "この操作にはオーナー権限が必要です。"},
         )
     return bot, member
+
+
+def list_user_bots(current_user: User, db: Session) -> list[tuple[Bot, str]]:
+    """current_user が所属する全ボットと自分のロールを返す（owner 優先→参加順）。"""
+    members = (
+        db.query(BotMember)
+        .filter(BotMember.user_id == current_user.id)
+        .order_by((BotMember.role != ROLE_OWNER), BotMember.created_at)
+        .all()
+    )
+    if not members:
+        return []
+    bots = {b.id: b for b in db.query(Bot).filter(Bot.id.in_([m.bot_id for m in members])).all()}
+    return [(bots[m.bot_id], m.role) for m in members if m.bot_id in bots]

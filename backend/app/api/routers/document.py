@@ -3,7 +3,7 @@ import os
 import uuid
 
 import boto3
-from fastapi import APIRouter, BackgroundTasks, Depends, File, HTTPException, UploadFile, status
+from fastapi import APIRouter, BackgroundTasks, Depends, File, HTTPException, Header, UploadFile, status
 from pydantic import BaseModel
 from sqlalchemy.orm import Session
 from typing import Optional
@@ -34,8 +34,8 @@ class DocumentResponse(BaseModel):
     model_config = {"from_attributes": True}
 
 
-def _get_bot_or_404(current_user: User, db: Session) -> Bot:
-    return get_user_bot(current_user, db)
+def _get_bot_or_404(current_user: User, db: Session, bot_id: str | None = None) -> Bot:
+    return get_user_bot(current_user, db, bot_id)
 
 
 def _doc_to_response(doc: Document) -> DocumentResponse:
@@ -51,8 +51,8 @@ def _doc_to_response(doc: Document) -> DocumentResponse:
 
 
 @router.get("", response_model=list[DocumentResponse])
-def list_documents(current_user: User = Depends(get_current_user), db: Session = Depends(get_db)):
-    bot = _get_bot_or_404(current_user, db)
+def list_documents(current_user: User = Depends(get_current_user), x_bot_id: str | None = Header(None, alias="X-Bot-Id"), db: Session = Depends(get_db)):
+    bot = _get_bot_or_404(current_user, db, x_bot_id)
     docs = db.query(Document).filter(Document.bot_id == bot.id).order_by(Document.created_at.desc()).all()
     return [_doc_to_response(d) for d in docs]
 
@@ -62,6 +62,7 @@ async def upload_document(
     background_tasks: BackgroundTasks,
     file: UploadFile = File(...),
     current_user: User = Depends(get_current_user),
+    x_bot_id: str | None = Header(None, alias="X-Bot-Id"),
     db: Session = Depends(get_db),
 ):
     # バリデーション
@@ -78,7 +79,7 @@ async def upload_document(
             detail={"code": "file_too_large", "message": f"ファイルサイズは{settings.max_upload_file_size_mb}MB以内にしてください。"},
         )
 
-    bot = _get_bot_or_404(current_user, db)
+    bot = _get_bot_or_404(current_user, db, x_bot_id)
 
     # ストレージへ保存
     doc_id = uuid.uuid4()
@@ -132,8 +133,8 @@ async def upload_document(
 
 
 @router.get("/{document_id}", response_model=DocumentResponse)
-def get_document(document_id: str, current_user: User = Depends(get_current_user), db: Session = Depends(get_db)):
-    bot = _get_bot_or_404(current_user, db)
+def get_document(document_id: str, current_user: User = Depends(get_current_user), x_bot_id: str | None = Header(None, alias="X-Bot-Id"), db: Session = Depends(get_db)):
+    bot = _get_bot_or_404(current_user, db, x_bot_id)
     doc = db.query(Document).filter(Document.id == UUID(document_id), Document.bot_id == bot.id).first()
     if not doc:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND,
@@ -142,8 +143,8 @@ def get_document(document_id: str, current_user: User = Depends(get_current_user
 
 
 @router.delete("/{document_id}", status_code=status.HTTP_204_NO_CONTENT)
-def delete_document(document_id: str, current_user: User = Depends(get_current_user), db: Session = Depends(get_db)):
-    bot = _get_bot_or_404(current_user, db)
+def delete_document(document_id: str, current_user: User = Depends(get_current_user), x_bot_id: str | None = Header(None, alias="X-Bot-Id"), db: Session = Depends(get_db)):
+    bot = _get_bot_or_404(current_user, db, x_bot_id)
     doc = db.query(Document).filter(Document.id == UUID(document_id), Document.bot_id == bot.id).first()
     if not doc:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND,

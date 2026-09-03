@@ -1,8 +1,21 @@
 import axios from 'axios'
 
+export const CURRENT_BOT_KEY = 'currentBotId'
+
 const api = axios.create({
   baseURL: `${import.meta.env.VITE_API_BASE_URL ?? ''}/api`,
   withCredentials: true, // HttpOnly Cookie を送信するために必要
+})
+
+// 選択中のボットを X-Bot-Id ヘッダで送る（複数ボット編集用）
+api.interceptors.request.use((config) => {
+  try {
+    const id = localStorage.getItem(CURRENT_BOT_KEY)
+    if (id) config.headers['X-Bot-Id'] = id
+  } catch {
+    // localStorage 不可の環境では未指定（サーバーが所属ボットを1つ選ぶ）
+  }
+  return config
 })
 
 api.interceptors.response.use(

@@ -108,3 +108,11 @@ export interface BotMember {
   is_me: boolean
   created_at: string
 }
+
+export interface BotSummary {
+  id: string
+  chat_title: string
+  public_slug: string
+  is_public: boolean
+  role: 'owner' | 'editor'
+}
