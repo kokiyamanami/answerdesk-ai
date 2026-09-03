@@ -11,7 +11,7 @@ export default function RegisterPage() {
   const [error, setError] = useState<string | null>(null)
   const [submitting, setSubmitting] = useState(false)
 
-  if (!authLoading && user) return <Navigate to="/app/bot" replace />
+  if (!authLoading && user) return <Navigate to="/app" replace />
 
   const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault()
@@ -31,7 +31,7 @@ export default function RegisterPage() {
         password: form.password,
       })
       refetch()
-      navigate('/app/bot')
+      navigate('/app')
     } catch (err) {
       const msg = (err as { response?: { data?: { detail?: { message?: string } } } })?.response?.data?.detail?.message
       setError(msg || '登録に失敗しました。')

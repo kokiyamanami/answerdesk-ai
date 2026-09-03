@@ -1,17 +1,18 @@
 import { useState } from 'react'
-import { NavLink, Outlet, useNavigate } from 'react-router-dom'
+import { NavLink, Outlet, useLocation, useNavigate } from 'react-router-dom'
 import { logout } from '../lib/apiClient'
 import { useAuth } from '../contexts/AuthContext'
 import '../admin.css'
 
 const NAV_ITEMS = [
-  { to: '/app/bot',              icon: '🤖', label: 'ボット設定' },
-  { to: '/app/design',           icon: '🎨', label: 'デザイン' },
-  { to: '/app/contact',          icon: '📬', label: '問い合わせ' },
-  { to: '/app/faqs',             icon: '💬', label: 'FAQ' },
-  { to: '/app/documents',        icon: '📄', label: 'ドキュメント' },
-  { to: '/app/accuracy',         icon: '🧪', label: '精度テスト' },
-  { to: '/app/conversations',    icon: '🗂️', label: '会話ログ' },
+  { to: '/app',                 icon: '🏠', label: 'ボット一覧', end: true },
+  { to: '/app/bot',             icon: '🤖', label: 'ボット設定' },
+  { to: '/app/design',          icon: '🎨', label: 'デザイン' },
+  { to: '/app/contact',         icon: '📬', label: '問い合わせ' },
+  { to: '/app/faqs',            icon: '💬', label: 'FAQ' },
+  { to: '/app/documents',       icon: '📄', label: 'ドキュメント' },
+  { to: '/app/accuracy',        icon: '🧪', label: '精度テスト' },
+  { to: '/app/conversations',   icon: '🗂️', label: '会話ログ' },
   { to: '/app/form-submissions', icon: '📩', label: 'フォーム送信' },
   { to: '/app/members',         icon: '👥', label: 'メンバー' },
 ]
@@ -19,7 +20,12 @@ const NAV_ITEMS = [
 export default function AdminLayout() {
   const { user, bots, currentBotId, setCurrentBot, clearAuth } = useAuth()
   const [menuOpen, setMenuOpen] = useState(false)
+  const [botMenuOpen, setBotMenuOpen] = useState(false)
   const navigate = useNavigate()
+  const location = useLocation()
+
+  const currentBot = bots.find(b => b.id === currentBotId) ?? null
+  const onHome = location.pathname === '/app'
 
   const handleLogout = async () => {
     await logout()
@@ -27,9 +33,9 @@ export default function AdminLayout() {
     window.location.href = '/login'
   }
 
-  const onBotChange = (value: string) => {
-    if (value === '__new__') { navigate('/app/bot?new=1'); return }
-    setCurrentBot(value)
+  const pickBot = (id: string) => {
+    setBotMenuOpen(false)
+    setCurrentBot(id)
     navigate('/app/bot')
   }
 
@@ -44,10 +50,11 @@ export default function AdminLayout() {
           <span className={`hamburger-line${menuOpen ? ' open' : ''}`} />
           <span className={`hamburger-line${menuOpen ? ' open' : ''}`} />
         </button>
-        <span className="mobile-header-title">AnswerDesk AI</span>
+        <span className="mobile-header-title">
+          {currentBot ? currentBot.chat_title : 'AnswerDesk AI'}
+        </span>
       </header>
 
-      {/* ---- Overlay (mobile) ---- */}
       {menuOpen && <div className="sidebar-overlay" onClick={() => setMenuOpen(false)} />}
 
       {/* ---- Sidebar ---- */}
@@ -58,24 +65,40 @@ export default function AdminLayout() {
         </div>
 
         {bots.length > 0 && (
-          <>
-            <div className="sidebar-section-label">ボット</div>
-            <select
-              value={currentBotId ?? ''}
-              onChange={e => onBotChange(e.target.value)}
-              style={{
-                width: '100%', padding: '8px 10px', marginBottom: 8, borderRadius: 8,
-                border: '1px solid var(--gray-200)', background: '#fff', fontSize: 13,
-              }}
-            >
-              {bots.map(b => (
-                <option key={b.id} value={b.id}>
-                  {b.chat_title}{b.role === 'editor' ? '（編集者）' : ''}
-                </option>
-              ))}
-              <option value="__new__">＋ 新しいボットを作成</option>
-            </select>
-          </>
+          <div className="bot-switcher">
+            <div className="sidebar-section-label">編集中のボット</div>
+            <button className="bot-switcher-current" onClick={() => setBotMenuOpen(o => !o)}>
+              <span className="bot-switcher-icon">💬</span>
+              <span className="bot-switcher-name">{currentBot?.chat_title ?? 'ボットを選択'}</span>
+              <span className="bot-switcher-caret">{botMenuOpen ? '▲' : '▼'}</span>
+            </button>
+            {botMenuOpen && (
+              <>
+                <div
+                  onClick={() => setBotMenuOpen(false)}
+                  style={{ position: 'fixed', inset: 0, zIndex: 25 }}
+                />
+                <div className="bot-switcher-menu">
+                  {bots.map(b => (
+                    <button
+                      key={b.id}
+                      className={`bot-switcher-item${b.id === currentBotId ? ' active' : ''}`}
+                      onClick={() => pickBot(b.id)}
+                    >
+                      <span className="bot-switcher-name">{b.chat_title}</span>
+                      <span className="bot-switcher-role">{b.role === 'owner' ? 'オーナー' : '編集者'}</span>
+                    </button>
+                  ))}
+                  <button
+                    className="bot-switcher-item bot-switcher-new"
+                    onClick={() => { setBotMenuOpen(false); navigate('/app/bot?new=1') }}
+                  >
+                    ＋ 新しいボットを作成
+                  </button>
+                </div>
+              </>
+            )}
+          </div>
         )}
 
         <div className="sidebar-section-label">メニュー</div>
@@ -84,6 +107,7 @@ export default function AdminLayout() {
             <NavLink
               key={item.to}
               to={item.to}
+              end={item.end}
               onClick={() => setMenuOpen(false)}
               className={({ isActive }) => `sidebar-link${isActive ? ' active' : ''}`}
             >
@@ -110,6 +134,7 @@ export default function AdminLayout() {
           <NavLink
             key={item.to}
             to={item.to}
+            end={item.end}
             className={({ isActive }) => `bottom-nav-item${isActive ? ' active' : ''}`}
           >
             <span className="bottom-nav-icon">{item.icon}</span>
@@ -119,6 +144,15 @@ export default function AdminLayout() {
       </nav>
 
       <main className="admin-main">
+        {!onHome && currentBot && (
+          <div className="bot-context-bar">
+            <span className="bot-context-label">📁 {currentBot.chat_title}</span>
+            <span className={`badge ${currentBot.role === 'owner' ? 'badge-indigo' : 'badge-gray'}`}>
+              {currentBot.role === 'owner' ? 'オーナー' : '編集者'}
+            </span>
+            <button className="bot-context-home" onClick={() => navigate('/app')}>ボット一覧へ</button>
+          </div>
+        )}
         <Outlet />
       </main>
     </div>

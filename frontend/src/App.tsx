@@ -15,6 +15,7 @@ import ConversationPage from './pages/ConversationPage'
 import FormSubmissionsPage from './pages/FormSubmissionsPage'
 import AccuracyTestPage from './pages/AccuracyTestPage'
 import MembersPage from './pages/MembersPage'
+import BotsHomePage from './pages/BotsHomePage'
 import PublicChatPage from './pages/PublicChatPage'
 import LandingPage from './pages/LandingPage'
 
@@ -31,6 +32,7 @@ function App() {
 
           <Route element={<RequireAuth />}>
             <Route element={<AdminLayout />}>
+              <Route path="/app" element={<BotsHomePage />} />
               <Route path="/app/bot" element={<BotPage />} />
               <Route element={<RequireBot />}>
                 <Route path="/app/design" element={<DesignPage />} />
@@ -45,7 +47,6 @@ function App() {
                 <Route path="/app/conversations" element={<ConversationPage />} />
                 <Route path="/app/form-submissions" element={<FormSubmissionsPage />} />
               </Route>
-              <Route path="/app" element={<Navigate to="/app/bot" replace />} />
             </Route>
           </Route>
 

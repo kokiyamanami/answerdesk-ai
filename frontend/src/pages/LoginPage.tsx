@@ -12,7 +12,7 @@ export default function LoginPage() {
   const [error, setError] = useState<string | null>(null)
   const [submitting, setSubmitting] = useState(false)
 
-  if (!authLoading && user) return <Navigate to="/app/bot" replace />
+  if (!authLoading && user) return <Navigate to="/app" replace />
 
   const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault()
@@ -21,7 +21,7 @@ export default function LoginPage() {
     try {
       await api.post('/auth/login', { email, password })
       refetch()
-      navigate('/app/bot')
+      navigate('/app')
     } catch {
       setError('メールアドレスまたはパスワードが正しくありません。')
     } finally {
