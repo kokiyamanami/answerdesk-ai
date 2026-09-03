@@ -620,3 +620,103 @@ body {
     padding: 44px 64px;
   }
 }
+
+/* ===== Bot switcher (sidebar) ===== */
+.bot-switcher {
+  padding: 4px 12px 8px;
+  position: relative;
+}
+.bot-switcher-current {
+  width: 100%;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 9px 10px;
+  border-radius: 8px;
+  border: 1px solid rgba(255,255,255,0.12);
+  background: rgba(255,255,255,0.04);
+  color: #e2e8f0;
+  font-size: 13px;
+  font-weight: 600;
+  cursor: pointer;
+  text-align: left;
+}
+.bot-switcher-current:hover { background: rgba(255,255,255,0.08); }
+.bot-switcher-icon { flex-shrink: 0; }
+.bot-switcher-name {
+  flex: 1;
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.bot-switcher-caret { font-size: 9px; color: var(--sidebar-text); flex-shrink: 0; }
+
+.bot-switcher-menu {
+  position: absolute;
+  left: 12px;
+  right: 12px;
+  margin-top: 4px;
+  background: #1e293b;
+  border: 1px solid rgba(255,255,255,0.12);
+  border-radius: 8px;
+  padding: 4px;
+  z-index: 30;
+  box-shadow: 0 8px 24px rgba(0,0,0,0.4);
+  max-height: 320px;
+  overflow-y: auto;
+}
+.bot-switcher-item {
+  width: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  padding: 8px 10px;
+  border-radius: 6px;
+  background: transparent;
+  color: var(--sidebar-text);
+  font-size: 13px;
+  cursor: pointer;
+  text-align: left;
+}
+.bot-switcher-item:hover { background: rgba(255,255,255,0.06); color: #e2e8f0; }
+.bot-switcher-item.active { background: var(--sidebar-active-bg); color: var(--sidebar-active-text); }
+.bot-switcher-role { font-size: 10px; color: var(--gray-600); flex-shrink: 0; }
+.bot-switcher-new {
+  margin-top: 2px;
+  border-top: 1px solid rgba(255,255,255,0.08);
+  color: #a5b4fc;
+  justify-content: flex-start;
+}
+
+/* ===== Current-bot context bar (main area) ===== */
+.bot-context-bar {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 10px 14px;
+  margin-bottom: 20px;
+  background: #fff;
+  border: 1px solid var(--gray-200);
+  border-radius: 10px;
+  font-size: 13px;
+}
+.bot-context-label {
+  font-weight: 700;
+  color: var(--gray-800);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.bot-context-home {
+  margin-left: auto;
+  background: transparent;
+  border: none;
+  color: var(--brand);
+  font-size: 12px;
+  font-weight: 600;
+  cursor: pointer;
+  flex-shrink: 0;
+}
+.bot-context-home:hover { text-decoration: underline; }
