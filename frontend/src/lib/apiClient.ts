@@ -1,5 +1,5 @@
 import api from '../lib/api'
-import type { Bot, ThemePreset, FAQ, Document, ConversationSummary, ChatResponse, User, FormSubmission, TestQuestion, BotMember } from '../types/api'
+import type { Bot, ThemePreset, FAQ, Document, ConversationSummary, ChatResponse, User, FormSubmission, TestQuestion, BotMember, BotSummary } from '../types/api'
 
 // Extract a human-readable error message from an Axios error.
 // Handles: Pydantic 422 arrays, custom {message:} objects, plain strings.
@@ -20,6 +20,7 @@ export const logout = () => api.post('/auth/logout')
 
 // Bot
 export const fetchBot = () => api.get<Bot>('/bot').then(r => r.data)
+export const fetchBotList = () => api.get<BotSummary[]>('/bot/list').then(r => r.data)
 export const createBot = (data: { chat_title: string; public_slug: string }) =>
   api.post<Bot>('/bot', data).then(r => r.data)
 export const updateBot = (data: Partial<Bot>) => api.patch<Bot>('/bot', data).then(r => r.data)

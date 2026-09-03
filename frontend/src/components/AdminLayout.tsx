@@ -1,5 +1,5 @@
 import { useState } from 'react'
-import { NavLink, Outlet } from 'react-router-dom'
+import { NavLink, Outlet, useNavigate } from 'react-router-dom'
 import { logout } from '../lib/apiClient'
 import { useAuth } from '../contexts/AuthContext'
 import '../admin.css'
@@ -17,13 +17,20 @@ const NAV_ITEMS = [
 ]
 
 export default function AdminLayout() {
-  const { user, clearAuth } = useAuth()
+  const { user, bots, currentBotId, setCurrentBot, clearAuth } = useAuth()
   const [menuOpen, setMenuOpen] = useState(false)
+  const navigate = useNavigate()
 
   const handleLogout = async () => {
     await logout()
     clearAuth()
     window.location.href = '/login'
+  }
+
+  const onBotChange = (value: string) => {
+    if (value === '__new__') { navigate('/app/bot?new=1'); return }
+    setCurrentBot(value)
+    navigate('/app/bot')
   }
 
   const initials = user?.email?.slice(0, 1).toUpperCase() ?? 'A'
@@ -49,6 +56,27 @@ export default function AdminLayout() {
           <div className="sidebar-logo-icon">✦</div>
           <span className="sidebar-logo-text">AnswerDesk AI</span>
         </div>
+
+        {bots.length > 0 && (
+          <>
+            <div className="sidebar-section-label">ボット</div>
+            <select
+              value={currentBotId ?? ''}
+              onChange={e => onBotChange(e.target.value)}
+              style={{
+                width: '100%', padding: '8px 10px', marginBottom: 8, borderRadius: 8,
+                border: '1px solid var(--gray-200)', background: '#fff', fontSize: 13,
+              }}
+            >
+              {bots.map(b => (
+                <option key={b.id} value={b.id}>
+                  {b.chat_title}{b.role === 'editor' ? '（編集者）' : ''}
+                </option>
+              ))}
+              <option value="__new__">＋ 新しいボットを作成</option>
+            </select>
+          </>
+        )}
 
         <div className="sidebar-section-label">メニュー</div>
         <nav className="sidebar-nav">

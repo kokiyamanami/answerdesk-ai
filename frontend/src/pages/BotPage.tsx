@@ -1,4 +1,5 @@
 import { useEffect, useState, useRef } from 'react'
+import { useNavigate, useSearchParams } from 'react-router-dom'
 import { fetchBot, createBot, updateBot, checkSlug, extractApiError } from '../lib/apiClient'
 import type { Bot } from '../types/api'
 import { INDUSTRIES } from '../data/faqTemplates'
@@ -7,7 +8,10 @@ import { useAuth } from '../contexts/AuthContext'
 const BASE_URL = window.location.origin + '/c/'
 
 export default function BotPage() {
-  const { refetchBot } = useAuth()
+  const { refetchBot, refetchBots, setCurrentBot } = useAuth()
+  const [params] = useSearchParams()
+  const navigate = useNavigate()
+  const isNew = params.get('new') === '1'
   const [bot, setBot] = useState<Bot | null>(null)
   const [form, setForm] = useState<Partial<Bot>>({})
   const [slugStatus, setSlugStatus] = useState<'ok' | 'taken' | null>(null)
@@ -17,10 +21,11 @@ export default function BotPage() {
   const slugTimer = useRef<ReturnType<typeof setTimeout> | null>(null)
 
   useEffect(() => {
+    if (isNew) { setBot(null); setForm({}); return }
     fetchBot().catch(() => null).then(b => {
       if (b) { setBot(b); setForm(b) }
     })
-  }, [])
+  }, [isNew])
 
   const handleSlugChange = (val: string) => {
     setForm(f => ({ ...f, public_slug: val }))
@@ -50,8 +55,11 @@ export default function BotPage() {
       if (!bot) {
         const created = await createBot({ chat_title: form.chat_title || 'チャット', public_slug: form.public_slug! })
         setBot(created); setForm(created)
+        await refetchBots()
+        setCurrentBot(created.id)
         refetchBot()
         slug = created.public_slug
+        if (isNew) navigate('/app/bot', { replace: true })
       } else {
         const updated = await updateBot(form)
         setBot(updated); setForm(updated)

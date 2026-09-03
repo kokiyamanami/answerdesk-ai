@@ -1,7 +1,7 @@
 import csv
 import io
 
-from fastapi import APIRouter, Depends, File, HTTPException, UploadFile, status
+from fastapi import APIRouter, Depends, File, HTTPException, Header, UploadFile, status
 from fastapi.responses import StreamingResponse
 from pydantic import BaseModel
 from sqlalchemy.orm import Session
@@ -47,8 +47,8 @@ class FAQUpdateRequest(BaseModel):
     is_active: Optional[bool] = None
 
 
-def _get_bot_or_404(current_user: User, db: Session) -> Bot:
-    return get_user_bot(current_user, db)
+def _get_bot_or_404(current_user: User, db: Session, bot_id: str | None = None) -> Bot:
+    return get_user_bot(current_user, db, bot_id)
 
 
 def _sync_faq_chunk(faq: FAQ, db: Session) -> None:
@@ -80,8 +80,8 @@ def _sync_faq_chunk(faq: FAQ, db: Session) -> None:
 
 
 @router.get("", response_model=list[FAQResponse])
-def list_faqs(current_user: User = Depends(get_current_user), db: Session = Depends(get_db)):
-    bot = _get_bot_or_404(current_user, db)
+def list_faqs(current_user: User = Depends(get_current_user), x_bot_id: str | None = Header(None, alias="X-Bot-Id"), db: Session = Depends(get_db)):
+    bot = _get_bot_or_404(current_user, db, x_bot_id)
     faqs = (
         db.query(FAQ)
         .filter(FAQ.bot_id == bot.id, FAQ.is_active == True)
@@ -94,9 +94,9 @@ def list_faqs(current_user: User = Depends(get_current_user), db: Session = Depe
 
 
 @router.get("/export")
-def export_faqs(current_user: User = Depends(get_current_user), db: Session = Depends(get_db)):
+def export_faqs(current_user: User = Depends(get_current_user), x_bot_id: str | None = Header(None, alias="X-Bot-Id"), db: Session = Depends(get_db)):
     """FAQ を CSV でエクスポートする（Excel 互換のため UTF-8 BOM 付き）。"""
-    bot = _get_bot_or_404(current_user, db)
+    bot = _get_bot_or_404(current_user, db, x_bot_id)
     faqs = (
         db.query(FAQ)
         .filter(FAQ.bot_id == bot.id, FAQ.is_active == True)
@@ -120,11 +120,12 @@ def export_faqs(current_user: User = Depends(get_current_user), db: Session = De
 def import_faqs(
     file: UploadFile = File(...),
     current_user: User = Depends(get_current_user),
+    x_bot_id: str | None = Header(None, alias="X-Bot-Id"),
     db: Session = Depends(get_db),
 ):
     """CSV から FAQ を追加インポートする。列: question, answer, category(任意), sort_order(任意)。
     既存 FAQ は置き換えず追記。question/answer が空の行はスキップ。"""
-    bot = _get_bot_or_404(current_user, db)
+    bot = _get_bot_or_404(current_user, db, x_bot_id)
 
     raw = file.file.read()
     if len(raw) > 2 * 1024 * 1024:
@@ -176,8 +177,8 @@ def import_faqs(
 
 
 @router.post("", response_model=FAQResponse, status_code=status.HTTP_201_CREATED)
-def create_faq(body: FAQCreateRequest, current_user: User = Depends(get_current_user), db: Session = Depends(get_db)):
-    bot = _get_bot_or_404(current_user, db)
+def create_faq(body: FAQCreateRequest, current_user: User = Depends(get_current_user), x_bot_id: str | None = Header(None, alias="X-Bot-Id"), db: Session = Depends(get_db)):
+    bot = _get_bot_or_404(current_user, db, x_bot_id)
     faq = FAQ(bot_id=bot.id, question=body.question, answer=body.answer,
                category=body.category, sort_order=body.sort_order)
     db.add(faq)
@@ -191,8 +192,8 @@ def create_faq(body: FAQCreateRequest, current_user: User = Depends(get_current_
 
 @router.patch("/{faq_id}", response_model=FAQResponse)
 def update_faq(faq_id: str, body: FAQUpdateRequest,
-               current_user: User = Depends(get_current_user), db: Session = Depends(get_db)):
-    bot = _get_bot_or_404(current_user, db)
+               current_user: User = Depends(get_current_user), x_bot_id: str | None = Header(None, alias="X-Bot-Id"), db: Session = Depends(get_db)):
+    bot = _get_bot_or_404(current_user, db, x_bot_id)
     faq = db.query(FAQ).filter(FAQ.id == UUID(faq_id), FAQ.bot_id == bot.id).first()
     if not faq:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND,
@@ -210,8 +211,8 @@ def update_faq(faq_id: str, body: FAQUpdateRequest,
 
 
 @router.delete("/{faq_id}", status_code=status.HTTP_204_NO_CONTENT)
-def delete_faq(faq_id: str, current_user: User = Depends(get_current_user), db: Session = Depends(get_db)):
-    bot = _get_bot_or_404(current_user, db)
+def delete_faq(faq_id: str, current_user: User = Depends(get_current_user), x_bot_id: str | None = Header(None, alias="X-Bot-Id"), db: Session = Depends(get_db)):
+    bot = _get_bot_or_404(current_user, db, x_bot_id)
     faq = db.query(FAQ).filter(FAQ.id == UUID(faq_id), FAQ.bot_id == bot.id).first()
     if not faq:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND,

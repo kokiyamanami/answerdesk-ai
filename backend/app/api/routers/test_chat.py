@@ -2,7 +2,7 @@ import secrets
 from datetime import datetime, timezone
 from typing import Any, Optional
 
-from fastapi import APIRouter, Depends, HTTPException, status
+from fastapi import APIRouter, Depends, HTTPException, Header, status
 from pydantic import BaseModel
 from sqlalchemy.orm import Session
 
@@ -37,9 +37,10 @@ class TestChatResponse(BaseModel):
 def test_chat(
     body: TestChatRequest,
     current_user: User = Depends(get_current_user),
+    x_bot_id: str | None = Header(None, alias="X-Bot-Id"),
     db: Session = Depends(get_db),
 ):
-    bot = get_user_bot(current_user, db)
+    bot = get_user_bot(current_user, db, x_bot_id)
 
     # テストチャット用の一時会話セッション（毎回新規）
     conv = Conversation(

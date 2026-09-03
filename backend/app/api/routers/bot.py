@@ -6,12 +6,12 @@ import logging
 import boto3
 
 logger = logging.getLogger(__name__)
-from fastapi import APIRouter, Depends, File, HTTPException, Query, UploadFile, status
+from fastapi import APIRouter, Depends, File, Header, HTTPException, Query, UploadFile, status
 from pydantic import BaseModel, field_validator
 from sqlalchemy.orm import Session
 from typing import Optional
 
-from app.api.deps import get_current_user, find_user_bot, get_user_bot
+from app.api.deps import get_current_user, find_user_bot, get_user_bot, list_user_bots
 from app.core.config import settings
 from app.db.session import get_db
 from app.models.bot import Bot
@@ -109,17 +109,33 @@ def _bot_to_response(bot: Bot) -> BotResponse:
     )
 
 
+class BotSummaryResponse(BaseModel):
+    id: str
+    chat_title: str
+    public_slug: str
+    is_public: bool
+    role: str
+
+
+@router.get("/list", response_model=list[BotSummaryResponse])
+def list_bots(current_user: User = Depends(get_current_user), db: Session = Depends(get_db)):
+    return [
+        BotSummaryResponse(id=str(b.id), chat_title=b.chat_title, public_slug=b.public_slug,
+                           is_public=b.is_public, role=role)
+        for b, role in list_user_bots(current_user, db)
+    ]
+
+
 @router.get("", response_model=BotResponse)
-def get_bot(current_user: User = Depends(get_current_user), db: Session = Depends(get_db)):
-    bot = get_user_bot(current_user, db)
+def get_bot(current_user: User = Depends(get_current_user),
+            x_bot_id: str | None = Header(None, alias="X-Bot-Id"),
+            db: Session = Depends(get_db)):
+    bot = get_user_bot(current_user, db, x_bot_id)
     return _bot_to_response(bot)
 
 
 @router.post("", response_model=BotResponse, status_code=status.HTTP_201_CREATED)
 def create_bot(body: BotCreateRequest, current_user: User = Depends(get_current_user), db: Session = Depends(get_db)):
-    if find_user_bot(current_user, db):
-        raise HTTPException(status_code=status.HTTP_409_CONFLICT,
-                            detail={"code": "bot_already_exists", "message": "ボットはすでに作成されています。"})
     if db.query(Bot).filter(Bot.public_slug == body.public_slug).first():
         raise HTTPException(status_code=status.HTTP_409_CONFLICT,
                             detail={"code": "slug_already_taken", "message": "このURLはすでに使用されています。"})
@@ -139,8 +155,10 @@ def create_bot(body: BotCreateRequest, current_user: User = Depends(get_current_
 
 
 @router.patch("", response_model=BotResponse)
-def update_bot(body: BotUpdateRequest, current_user: User = Depends(get_current_user), db: Session = Depends(get_db)):
-    bot = get_user_bot(current_user, db)
+def update_bot(body: BotUpdateRequest, current_user: User = Depends(get_current_user),
+               x_bot_id: str | None = Header(None, alias="X-Bot-Id"),
+               db: Session = Depends(get_db)):
+    bot = get_user_bot(current_user, db, x_bot_id)
 
     if body.public_slug and body.public_slug != bot.public_slug:
         if db.query(Bot).filter(Bot.public_slug == body.public_slug, Bot.id != bot.id).first():
@@ -163,12 +181,13 @@ def update_bot(body: BotUpdateRequest, current_user: User = Depends(get_current_
 def check_slug(
     value: str = Query(..., min_length=3, max_length=50),
     current_user: User = Depends(get_current_user),
+    x_bot_id: str | None = Header(None, alias="X-Bot-Id"),
     db: Session = Depends(get_db),
 ):
     if not SLUG_PATTERN.match(value):
         return SlugCheckResponse(value=value, available=False)
     # 自分のbotの現在のslugは「使用可能」とみなす
-    my_bot = find_user_bot(current_user, db)
+    my_bot = find_user_bot(current_user, db, x_bot_id)
     if my_bot and my_bot.public_slug == value:
         return SlugCheckResponse(value=value, available=True)
     exists = db.query(Bot).filter(Bot.public_slug == value).first()
@@ -179,9 +198,10 @@ def check_slug(
 async def upload_icon(
     file: UploadFile = File(...),
     current_user: User = Depends(get_current_user),
+    x_bot_id: str | None = Header(None, alias="X-Bot-Id"),
     db: Session = Depends(get_db),
 ):
-    bot = get_user_bot(current_user, db)
+    bot = get_user_bot(current_user, db, x_bot_id)
 
     if file.content_type not in ALLOWED_IMAGE_TYPES:
         raise HTTPException(status_code=status.HTTP_422_UNPROCESSABLE_ENTITY,

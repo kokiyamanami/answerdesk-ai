@@ -2,7 +2,7 @@ from datetime import datetime
 from typing import Optional
 from uuid import UUID
 
-from fastapi import APIRouter, Depends, HTTPException, status
+from fastapi import APIRouter, Depends, HTTPException, Header, status
 from pydantic import BaseModel
 from sqlalchemy.orm import Session
 
@@ -60,8 +60,8 @@ def _validate_role(role: str) -> str:
 
 
 @router.get("", response_model=list[MemberResponse])
-def list_members(current_user: User = Depends(get_current_user), db: Session = Depends(get_db)):
-    bot, _ = get_user_membership(current_user, db)
+def list_members(current_user: User = Depends(get_current_user), x_bot_id: str | None = Header(None, alias="X-Bot-Id"), db: Session = Depends(get_db)):
+    bot, _ = get_user_membership(current_user, db, x_bot_id)
     members = (
         db.query(BotMember)
         .filter(BotMember.bot_id == bot.id)
@@ -82,8 +82,8 @@ def list_members(current_user: User = Depends(get_current_user), db: Session = D
 
 @router.post("", response_model=MemberResponse, status_code=status.HTTP_201_CREATED)
 def invite_member(body: InviteRequest,
-                  current_user: User = Depends(get_current_user), db: Session = Depends(get_db)):
-    bot, _ = require_bot_owner(current_user, db)
+                  current_user: User = Depends(get_current_user), x_bot_id: str | None = Header(None, alias="X-Bot-Id"), db: Session = Depends(get_db)):
+    bot, _ = require_bot_owner(current_user, db, x_bot_id)
     role = _validate_role(body.role)
     email = body.email.strip().lower()
     if not email:
@@ -117,8 +117,8 @@ def invite_member(body: InviteRequest,
 
 @router.patch("/{user_id}", response_model=MemberResponse)
 def update_member_role(user_id: str, body: RoleUpdateRequest,
-                       current_user: User = Depends(get_current_user), db: Session = Depends(get_db)):
-    bot, _ = require_bot_owner(current_user, db)
+                       current_user: User = Depends(get_current_user), x_bot_id: str | None = Header(None, alias="X-Bot-Id"), db: Session = Depends(get_db)):
+    bot, _ = require_bot_owner(current_user, db, x_bot_id)
     role = _validate_role(body.role)
     target = db.query(BotMember).filter(
         BotMember.bot_id == bot.id, BotMember.user_id == UUID(user_id)).first()
@@ -140,8 +140,8 @@ def update_member_role(user_id: str, body: RoleUpdateRequest,
 
 @router.delete("/{user_id}", status_code=status.HTTP_204_NO_CONTENT)
 def remove_member(user_id: str,
-                  current_user: User = Depends(get_current_user), db: Session = Depends(get_db)):
-    bot, _ = require_bot_owner(current_user, db)
+                  current_user: User = Depends(get_current_user), x_bot_id: str | None = Header(None, alias="X-Bot-Id"), db: Session = Depends(get_db)):
+    bot, _ = require_bot_owner(current_user, db, x_bot_id)
     target = db.query(BotMember).filter(
         BotMember.bot_id == bot.id, BotMember.user_id == UUID(user_id)).first()
     if not target:
@@ -159,8 +159,8 @@ def remove_member(user_id: str,
 
 @router.delete("/invites/{invite_id}", status_code=status.HTTP_204_NO_CONTENT)
 def cancel_invite(invite_id: str,
-                  current_user: User = Depends(get_current_user), db: Session = Depends(get_db)):
-    bot, _ = require_bot_owner(current_user, db)
+                  current_user: User = Depends(get_current_user), x_bot_id: str | None = Header(None, alias="X-Bot-Id"), db: Session = Depends(get_db)):
+    bot, _ = require_bot_owner(current_user, db, x_bot_id)
     inv = db.query(BotInvite).filter(
         BotInvite.id == UUID(invite_id), BotInvite.bot_id == bot.id).first()
     if not inv:
