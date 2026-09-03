@@ -11,7 +11,7 @@ from pydantic import BaseModel, field_validator
 from sqlalchemy.orm import Session
 from typing import Optional
 
-from app.api.deps import get_current_user, find_user_bot, get_user_bot, list_user_bots
+from app.api.deps import get_current_user, find_user_bot, get_user_bot, list_user_bots, require_bot_owner
 from app.core.config import settings
 from app.db.session import get_db
 from app.models.bot import Bot
@@ -175,6 +175,15 @@ def update_bot(body: BotUpdateRequest, current_user: User = Depends(get_current_
     db.commit()
     db.refresh(bot)
     return _bot_to_response(bot)
+
+
+@router.delete("", status_code=status.HTTP_204_NO_CONTENT)
+def delete_bot(current_user: User = Depends(get_current_user),
+               x_bot_id: str | None = Header(None, alias="X-Bot-Id"),
+               db: Session = Depends(get_db)):
+    bot, _ = require_bot_owner(current_user, db, x_bot_id)
+    db.delete(bot)  # FAQ・ドキュメント・会話・メンバー等は FK CASCADE で消える
+    db.commit()
 
 
 @router.get("/slug/check", response_model=SlugCheckResponse)

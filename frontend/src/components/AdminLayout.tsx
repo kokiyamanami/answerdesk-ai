@@ -56,13 +56,13 @@ export default function AdminLayout() {
 
       {/* ---- Sidebar ---- */}
       <aside className={`admin-sidebar${menuOpen ? ' sidebar-open' : ''}`}>
-        <div className="sidebar-logo">
+        <button
+          className="sidebar-logo sidebar-logo-link"
+          onClick={() => { setMenuOpen(false); navigate('/app') }}
+          title="ボット一覧へ"
+        >
           <div className="sidebar-logo-icon">✦</div>
           <span className="sidebar-logo-text">AnswerDesk AI</span>
-        </div>
-
-        <button className="sidebar-back" onClick={() => { setMenuOpen(false); navigate('/app') }}>
-          ← ボット一覧
         </button>
 
         {bots.length > 0 && (
@@ -90,12 +90,6 @@ export default function AdminLayout() {
                       <span className="bot-switcher-role">{b.role === 'owner' ? 'オーナー' : '編集者'}</span>
                     </button>
                   ))}
-                  <button
-                    className="bot-switcher-item bot-switcher-new"
-                    onClick={() => { setBotMenuOpen(false); navigate('/app/bot?new=1') }}
-                  >
-                    ＋ 新しいボットを作成
-                  </button>
                 </div>
               </>
             )}
