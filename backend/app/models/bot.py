@@ -11,7 +11,7 @@ class Bot(Base):
     __tablename__ = "bots"
 
     id = Column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
-    user_id = Column(UUID(as_uuid=True), ForeignKey("users.id", ondelete="CASCADE"), nullable=False, unique=True)
+    user_id = Column(UUID(as_uuid=True), ForeignKey("users.id", ondelete="CASCADE"), nullable=False)  # 作成者。編集権は bot_members で管理
     name = Column(String(255), nullable=False)
     public_slug = Column(String(50), nullable=False, unique=True)
     is_public = Column(Boolean, nullable=False, default=True)
