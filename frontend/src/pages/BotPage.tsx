@@ -1,6 +1,6 @@
 import { useEffect, useState, useRef } from 'react'
-import { useNavigate, useSearchParams } from 'react-router-dom'
-import { fetchBot, createBot, updateBot, checkSlug, extractApiError } from '../lib/apiClient'
+import { useNavigate } from 'react-router-dom'
+import { fetchBot, updateBot, deleteBot, checkSlug, extractApiError } from '../lib/apiClient'
 import type { Bot } from '../types/api'
 import { INDUSTRIES } from '../data/faqTemplates'
 import { useAuth } from '../contexts/AuthContext'
@@ -8,24 +8,25 @@ import { useAuth } from '../contexts/AuthContext'
 const BASE_URL = window.location.origin + '/c/'
 
 export default function BotPage() {
-  const { refetchBot, refetchBots, setCurrentBot } = useAuth()
-  const [params] = useSearchParams()
+  const { bots, currentBotId, refetchBots } = useAuth()
   const navigate = useNavigate()
-  const isNew = params.get('new') === '1'
   const [bot, setBot] = useState<Bot | null>(null)
   const [form, setForm] = useState<Partial<Bot>>({})
   const [slugStatus, setSlugStatus] = useState<'ok' | 'taken' | null>(null)
   const [saving, setSaving] = useState(false)
+  const [deleting, setDeleting] = useState(false)
   const [alert, setAlert] = useState<{ type: 'success' | 'error'; msg: string; link?: string } | null>(null)
   const [copied, setCopied] = useState(false)
   const slugTimer = useRef<ReturnType<typeof setTimeout> | null>(null)
 
+  const isOwner = bots.find(b => b.id === currentBotId)?.role === 'owner'
+
   useEffect(() => {
-    if (isNew) { setBot(null); setForm({}); return }
     fetchBot().catch(() => null).then(b => {
       if (b) { setBot(b); setForm(b) }
+      else navigate('/app', { replace: true })
     })
-  }, [isNew])
+  }, [currentBotId, navigate])
 
   const handleSlugChange = (val: string) => {
     setForm(f => ({ ...f, public_slug: val }))
@@ -39,33 +40,16 @@ export default function BotPage() {
   }
 
   const handleSave = async () => {
-    if (!bot) {
-      if (!form.public_slug) {
-        setAlert({ type: 'error', msg: '公開URLスラグを入力してください。' })
-        return
-      }
-      if (slugStatus === 'taken') {
-        setAlert({ type: 'error', msg: 'このURLはすでに使用されています。' })
-        return
-      }
+    if (slugStatus === 'taken') {
+      setAlert({ type: 'error', msg: 'このURLはすでに使用されています。' })
+      return
     }
     setSaving(true); setAlert(null)
     try {
-      let slug: string
-      if (!bot) {
-        const created = await createBot({ chat_title: form.chat_title || 'チャット', public_slug: form.public_slug! })
-        setBot(created); setForm(created)
-        await refetchBots()
-        setCurrentBot(created.id)
-        refetchBot()
-        slug = created.public_slug
-        if (isNew) navigate('/app/bot', { replace: true })
-      } else {
-        const updated = await updateBot(form)
-        setBot(updated); setForm(updated)
-        slug = updated.public_slug
-      }
-      setAlert({ type: 'success', msg: '保存しました。', link: `${BASE_URL}${slug}` })
+      const updated = await updateBot(form)
+      setBot(updated); setForm(updated)
+      await refetchBots()
+      setAlert({ type: 'success', msg: '保存しました。', link: `${BASE_URL}${updated.public_slug}` })
     } catch (err) {
       setAlert({ type: 'error', msg: extractApiError(err, '保存に失敗しました。') })
     } finally { setSaving(false) }
@@ -75,6 +59,21 @@ export default function BotPage() {
     if (!bot) return
     const updated = await updateBot({ is_public: !bot.is_public })
     setBot(updated); setForm(updated)
+    await refetchBots()
+  }
+
+  const handleDelete = async () => {
+    if (!bot) return
+    if (!confirm(`「${bot.chat_title}」を削除します。FAQ・ドキュメント・会話ログもすべて消えます。元に戻せません。`)) return
+    setDeleting(true)
+    try {
+      await deleteBot()
+      await refetchBots()
+      navigate('/app', { replace: true })
+    } catch (err) {
+      setAlert({ type: 'error', msg: extractApiError(err, '削除に失敗しました。') })
+      setDeleting(false)
+    }
   }
 
   const publicUrl = `${BASE_URL}${form.public_slug || ''}`
@@ -301,6 +300,18 @@ export default function BotPage() {
           {saving ? '保存中...' : '💾 保存'}
         </button>
       </div>
+
+      {isOwner && bot && (
+        <div className="card" style={{ marginTop: 32, borderColor: 'var(--red)' }}>
+          <h2 style={{ fontSize: 15, fontWeight: 700, marginBottom: 4, color: 'var(--red)' }}>危険な操作</h2>
+          <p style={{ fontSize: 13, color: 'var(--gray-500)', marginBottom: 14 }}>
+            このボットを削除すると、FAQ・ドキュメント・会話ログ・メンバー設定もすべて削除されます。元に戻せません。
+          </p>
+          <button className="btn btn-danger" onClick={handleDelete} disabled={deleting}>
+            {deleting ? '削除中...' : 'このボットを削除'}
+          </button>
+        </div>
+      )}
     </div>
     </>
   )

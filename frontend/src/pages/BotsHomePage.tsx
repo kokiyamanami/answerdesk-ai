@@ -1,16 +1,96 @@
-import { Navigate, useNavigate } from 'react-router-dom'
-import { logout } from '../lib/apiClient'
+import { useRef, useState } from 'react'
+import { useNavigate } from 'react-router-dom'
+import { logout, createBot, checkSlug, extractApiError } from '../lib/apiClient'
 import { useAuth } from '../contexts/AuthContext'
 import '../admin.css'
 
 const ORIGIN = window.location.origin
 
+function NewBotModal({ onClose, onCreated }: { onClose: () => void; onCreated: (id: string) => void }) {
+  const [chatTitle, setChatTitle] = useState('')
+  const [slug, setSlug] = useState('')
+  const [slugStatus, setSlugStatus] = useState<'ok' | 'taken' | null>(null)
+  const [saving, setSaving] = useState(false)
+  const [err, setErr] = useState<string | null>(null)
+  const timer = useRef<ReturnType<typeof setTimeout> | null>(null)
+
+  const onSlugChange = (v: string) => {
+    setSlug(v)
+    setSlugStatus(null)
+    if (timer.current) clearTimeout(timer.current)
+    if (v.length < 3) return
+    timer.current = setTimeout(async () => {
+      const res = await checkSlug(v).catch(() => null)
+      if (res) setSlugStatus(res.available ? 'ok' : 'taken')
+    }, 400)
+  }
+
+  const canSubmit = chatTitle.trim() && slug.trim().length >= 3 && slugStatus !== 'taken' && !saving
+
+  const submit = async () => {
+    if (!canSubmit) return
+    setSaving(true); setErr(null)
+    try {
+      const bot = await createBot({ chat_title: chatTitle.trim(), public_slug: slug.trim() })
+      onCreated(bot.id)
+    } catch (e) {
+      setErr(extractApiError(e, '作成に失敗しました。'))
+      setSaving(false)
+    }
+  }
+
+  return (
+    <div
+      onClick={onClose}
+      style={{
+        position: 'fixed', inset: 0, background: 'rgba(15,23,42,.5)', zIndex: 50,
+        display: 'flex', alignItems: 'center', justifyContent: 'center', padding: 16,
+      }}
+    >
+      <div
+        onClick={e => e.stopPropagation()}
+        style={{ background: '#fff', borderRadius: 14, padding: 24, width: 420, maxWidth: '100%' }}
+      >
+        <h2 style={{ fontSize: 17, fontWeight: 700, margin: '0 0 4px', color: 'var(--gray-900)' }}>新しいボット</h2>
+        <p style={{ fontSize: 13, color: 'var(--gray-500)', margin: '0 0 18px' }}>
+          名前と公開URLのスラグを決めます。あとから変更できます。
+        </p>
+
+        {err && <div className="alert alert-error" style={{ marginBottom: 12 }}>{err}</div>}
+
+        <div className="form-field">
+          <label className="form-label">チャットタイトル</label>
+          <input className="form-input" value={chatTitle}
+            onChange={e => setChatTitle(e.target.value)} placeholder="例: 受講生サポート" autoFocus />
+        </div>
+
+        <div className="form-field" style={{ marginBottom: 4 }}>
+          <label className="form-label">Slug（公開URL）</label>
+          <input className="form-input" value={slug}
+            onChange={e => onSlugChange(e.target.value)} placeholder="my-company-faq" />
+          {slugStatus === 'ok' && <span className="form-hint" style={{ color: '#15803d' }}>✓ 使用可能です</span>}
+          {slugStatus === 'taken' && <span className="form-hint" style={{ color: '#dc2626' }}>✗ このURLはすでに使われています</span>}
+          {!slugStatus && slug && <span className="form-hint">{ORIGIN}/c/{slug}</span>}
+          {!slug && <span className="form-hint">英数字・ハイフン、3文字以上</span>}
+        </div>
+
+        <div style={{ display: 'flex', justifyContent: 'flex-end', gap: 8, marginTop: 20 }}>
+          <button className="btn btn-secondary" onClick={onClose}>キャンセル</button>
+          <button className="btn btn-primary" onClick={submit} disabled={!canSubmit}>
+            {saving ? '作成中…' : '作成する'}
+          </button>
+        </div>
+      </div>
+    </div>
+  )
+}
+
 export default function BotsHomePage() {
-  const { bots, user, loading, setCurrentBot, clearAuth } = useAuth()
+  const { bots, user, loading, setCurrentBot, refetchBots } = useAuth()
   const navigate = useNavigate()
+  const [showNew, setShowNew] = useState(false)
 
   if (loading) return <div style={{ padding: 32 }}>読み込み中...</div>
-  if (bots.length === 0) return <Navigate to="/app/bot?new=1" replace />
 
   const open = (id: string) => {
     setCurrentBot(id)
@@ -19,13 +99,17 @@ export default function BotsHomePage() {
 
   const handleLogout = async () => {
     await logout()
-    clearAuth()
     window.location.href = '/login'
+  }
+
+  const onCreated = async (id: string) => {
+    await refetchBots()
+    setShowNew(false)
+    open(id)
   }
 
   return (
     <div style={{ minHeight: '100vh', background: 'var(--gray-50)' }}>
-      {/* header */}
       <header style={{
         display: 'flex', alignItems: 'center', gap: 12,
         padding: '14px 24px', background: '#fff', borderBottom: '1px solid var(--gray-200)',
@@ -34,10 +118,8 @@ export default function BotsHomePage() {
         <span style={{ fontWeight: 700, fontSize: 15, color: 'var(--gray-900)' }}>AnswerDesk AI</span>
         <div style={{ marginLeft: 'auto', display: 'flex', alignItems: 'center', gap: 14 }}>
           <span style={{ fontSize: 13, color: 'var(--gray-500)' }}>{user?.email}</span>
-          <button
-            onClick={handleLogout}
-            style={{ background: 'transparent', border: 'none', color: 'var(--gray-500)', fontSize: 13, cursor: 'pointer' }}
-          >
+          <button onClick={handleLogout}
+            style={{ background: 'transparent', border: 'none', color: 'var(--gray-500)', fontSize: 13, cursor: 'pointer' }}>
             ログアウト
           </button>
         </div>
@@ -46,7 +128,7 @@ export default function BotsHomePage() {
       <div style={{ maxWidth: 1000, margin: '0 auto', padding: '32px 24px' }}>
         <h1 className="page-title" style={{ marginBottom: 4 }}>ボット一覧</h1>
         <p className="page-desc" style={{ marginBottom: 24 }}>
-          編集したいチャットボットを選んでください。
+          {bots.length > 0 ? '編集したいチャットボットを選んでください。' : 'まずはボットを作成しましょう。'}
         </p>
 
         <div style={{
@@ -95,7 +177,7 @@ export default function BotsHomePage() {
           ))}
 
           <button
-            onClick={() => navigate('/app/bot?new=1')}
+            onClick={() => setShowNew(true)}
             style={{
               cursor: 'pointer', border: '2px dashed var(--gray-200)', borderRadius: 12,
               background: 'transparent', padding: 18, minHeight: 120,
@@ -108,6 +190,8 @@ export default function BotsHomePage() {
           </button>
         </div>
       </div>
+
+      {showNew && <NewBotModal onClose={() => setShowNew(false)} onCreated={onCreated} />}
     </div>
   )
 }

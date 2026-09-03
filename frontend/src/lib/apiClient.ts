@@ -24,6 +24,7 @@ export const fetchBotList = () => api.get<BotSummary[]>('/bot/list').then(r => r
 export const createBot = (data: { chat_title: string; public_slug: string }) =>
   api.post<Bot>('/bot', data).then(r => r.data)
 export const updateBot = (data: Partial<Bot>) => api.patch<Bot>('/bot', data).then(r => r.data)
+export const deleteBot = () => api.delete('/bot')
 export const checkSlug = (value: string) =>
   api.get<{ value: string; available: boolean }>(`/bot/slug/check?value=${value}`).then(r => r.data)
 export const uploadBotIcon = (file: File) => {

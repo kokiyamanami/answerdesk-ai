@@ -93,19 +93,14 @@ body {
   letter-spacing: -0.3px;
 }
 
-.sidebar-back {
-  margin: 10px 12px 2px;
-  padding: 6px 10px;
+.sidebar-logo-link {
+  width: 100%;
   background: transparent;
   border: none;
-  color: var(--sidebar-text);
-  font-size: 12px;
-  font-weight: 600;
   cursor: pointer;
-  text-align: left;
-  border-radius: 6px;
+  font: inherit;
 }
-.sidebar-back:hover { background: var(--sidebar-hover-bg); color: #e2e8f0; }
+.sidebar-logo-link:hover { background: var(--sidebar-hover-bg); }
 
 .sidebar-section-label {
   padding: 20px 20px 6px;
