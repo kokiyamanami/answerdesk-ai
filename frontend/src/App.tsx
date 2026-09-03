@@ -31,8 +31,8 @@ function App() {
           <Route path="/c/:slug" element={<PublicChatPage />} />
 
           <Route element={<RequireAuth />}>
+            <Route path="/app" element={<BotsHomePage />} />
             <Route element={<AdminLayout />}>
-              <Route path="/app" element={<BotsHomePage />} />
               <Route path="/app/bot" element={<BotPage />} />
               <Route element={<RequireBot />}>
                 <Route path="/app/design" element={<DesignPage />} />

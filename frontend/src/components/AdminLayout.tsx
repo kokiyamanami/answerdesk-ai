@@ -1,11 +1,10 @@
 import { useState } from 'react'
-import { NavLink, Outlet, useLocation, useNavigate } from 'react-router-dom'
+import { NavLink, Outlet, useNavigate } from 'react-router-dom'
 import { logout } from '../lib/apiClient'
 import { useAuth } from '../contexts/AuthContext'
 import '../admin.css'
 
 const NAV_ITEMS = [
-  { to: '/app',                 icon: '🏠', label: 'ボット一覧', end: true },
   { to: '/app/bot',             icon: '🤖', label: 'ボット設定' },
   { to: '/app/design',          icon: '🎨', label: 'デザイン' },
   { to: '/app/contact',         icon: '📬', label: '問い合わせ' },
@@ -22,10 +21,8 @@ export default function AdminLayout() {
   const [menuOpen, setMenuOpen] = useState(false)
   const [botMenuOpen, setBotMenuOpen] = useState(false)
   const navigate = useNavigate()
-  const location = useLocation()
 
   const currentBot = bots.find(b => b.id === currentBotId) ?? null
-  const onHome = location.pathname === '/app'
 
   const handleLogout = async () => {
     await logout()
@@ -63,6 +60,10 @@ export default function AdminLayout() {
           <div className="sidebar-logo-icon">✦</div>
           <span className="sidebar-logo-text">AnswerDesk AI</span>
         </div>
+
+        <button className="sidebar-back" onClick={() => { setMenuOpen(false); navigate('/app') }}>
+          ← ボット一覧
+        </button>
 
         {bots.length > 0 && (
           <div className="bot-switcher">
@@ -107,7 +108,7 @@ export default function AdminLayout() {
             <NavLink
               key={item.to}
               to={item.to}
-              end={item.end}
+
               onClick={() => setMenuOpen(false)}
               className={({ isActive }) => `sidebar-link${isActive ? ' active' : ''}`}
             >
@@ -134,7 +135,7 @@ export default function AdminLayout() {
           <NavLink
             key={item.to}
             to={item.to}
-            end={item.end}
+
             className={({ isActive }) => `bottom-nav-item${isActive ? ' active' : ''}`}
           >
             <span className="bottom-nav-icon">{item.icon}</span>
@@ -144,15 +145,6 @@ export default function AdminLayout() {
       </nav>
 
       <main className="admin-main">
-        {!onHome && currentBot && (
-          <div className="bot-context-bar">
-            <span className="bot-context-label">📁 {currentBot.chat_title}</span>
-            <span className={`badge ${currentBot.role === 'owner' ? 'badge-indigo' : 'badge-gray'}`}>
-              {currentBot.role === 'owner' ? 'オーナー' : '編集者'}
-            </span>
-            <button className="bot-context-home" onClick={() => navigate('/app')}>ボット一覧へ</button>
-          </div>
-        )}
         <Outlet />
       </main>
     </div>

@@ -93,6 +93,20 @@ body {
   letter-spacing: -0.3px;
 }
 
+.sidebar-back {
+  margin: 10px 12px 2px;
+  padding: 6px 10px;
+  background: transparent;
+  border: none;
+  color: var(--sidebar-text);
+  font-size: 12px;
+  font-weight: 600;
+  cursor: pointer;
+  text-align: left;
+  border-radius: 6px;
+}
+.sidebar-back:hover { background: var(--sidebar-hover-bg); color: #e2e8f0; }
+
 .sidebar-section-label {
   padding: 20px 20px 6px;
   font-size: 10px;
@@ -690,33 +704,3 @@ body {
   justify-content: flex-start;
 }
 
-/* ===== Current-bot context bar (main area) ===== */
-.bot-context-bar {
-  display: flex;
-  align-items: center;
-  gap: 10px;
-  padding: 10px 14px;
-  margin-bottom: 20px;
-  background: #fff;
-  border: 1px solid var(--gray-200);
-  border-radius: 10px;
-  font-size: 13px;
-}
-.bot-context-label {
-  font-weight: 700;
-  color: var(--gray-800);
-  overflow: hidden;
-  text-overflow: ellipsis;
-  white-space: nowrap;
-}
-.bot-context-home {
-  margin-left: auto;
-  background: transparent;
-  border: none;
-  color: var(--brand);
-  font-size: 12px;
-  font-weight: 600;
-  cursor: pointer;
-  flex-shrink: 0;
-}
-.bot-context-home:hover { text-decoration: underline; }
