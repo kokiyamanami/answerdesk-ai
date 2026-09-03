@@ -33,6 +33,7 @@ class BotResponse(BaseModel):
     chat_title: str
     icon_url: Optional[str]
     welcome_message: Optional[str]
+    description: Optional[str] = None
     theme_preset_id: Optional[str]
     fallback_enabled: bool
     fallback_message: str
@@ -67,6 +68,7 @@ class BotUpdateRequest(BaseModel):
     is_public: Optional[bool] = None
     icon_url: Optional[str] = None
     welcome_message: Optional[str] = None
+    description: Optional[str] = None
     theme_preset_id: Optional[str] = None
     fallback_enabled: Optional[bool] = None
     fallback_message: Optional[str] = None
@@ -100,6 +102,7 @@ def _bot_to_response(bot: Bot) -> BotResponse:
         chat_title=bot.chat_title,
         icon_url=bot.icon_url,
         welcome_message=bot.welcome_message,
+        description=bot.description,
         theme_preset_id=str(bot.theme_preset_id) if bot.theme_preset_id else None,
         fallback_enabled=bot.fallback_enabled,
         fallback_message=bot.fallback_message,

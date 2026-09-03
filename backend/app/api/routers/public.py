@@ -23,6 +23,7 @@ class PublicBotResponse(BaseModel):
     chat_title: str
     icon_url: Optional[str]
     welcome_message: Optional[str]
+    description: Optional[str]
     theme: Optional[dict]
     form_fields: Optional[list] = None
 
@@ -81,6 +82,7 @@ def get_public_bot(slug: str, db: Session = Depends(get_db)):
         chat_title=bot.chat_title,
         icon_url=bot.icon_url,
         welcome_message=bot.welcome_message,
+        description=bot.description,
         theme=theme,
         form_fields=bot.form_fields,
     )
