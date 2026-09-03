@@ -32,6 +32,111 @@ interface Message {
   showForm?: boolean
 }
 
+const DEFAULT_CONTACT_FIELDS: FormFieldConfig[] = [
+  { key: 'name', label: 'お名前', enabled: true, required: false },
+  { key: 'email', label: 'メールアドレス', enabled: true, required: true },
+  { key: 'body', label: 'お問い合わせ内容', enabled: true, required: true },
+]
+
+function StaffContactModal({
+  fields, primaryColor, onClose, onSubmit,
+}: {
+  fields: FormFieldConfig[]
+  primaryColor: string
+  onClose: () => void
+  onSubmit: (data: Record<string, string>) => Promise<void>
+}) {
+  const [values, setValues] = useState<Record<string, string>>({})
+  const [submitting, setSubmitting] = useState(false)
+  const [done, setDone] = useState(false)
+  const [err, setErr] = useState<string | null>(null)
+
+  const active = FORM_FIELD_DEFS.filter(def => fields.some(f => f.enabled && f.key === def.key))
+  const missing = active.some(def => {
+    const cfg = fields.find(f => f.key === def.key)!
+    return cfg.required && !(values[def.key] ?? '').trim()
+  })
+
+  const submit = async () => {
+    if (missing || submitting) return
+    setSubmitting(true); setErr(null)
+    try {
+      await onSubmit(values)
+      setDone(true)
+    } catch {
+      setErr('送信に失敗しました。時間をおいて再度お試しください。')
+      setSubmitting(false)
+    }
+  }
+
+  return (
+    <div onClick={onClose} style={{
+      position: 'fixed', inset: 0, background: 'rgba(15,23,42,.5)', zIndex: 60,
+      display: 'flex', alignItems: 'center', justifyContent: 'center', padding: 16,
+    }}>
+      <div onClick={e => e.stopPropagation()} style={{
+        background: '#fff', borderRadius: 14, padding: 22, width: 420, maxWidth: '100%',
+        maxHeight: '90vh', overflowY: 'auto', color: '#1e293b',
+      }}>
+        {done ? (
+          <div style={{ textAlign: 'center', padding: '12px 0' }}>
+            <div style={{ fontSize: 32, marginBottom: 8 }}>✅</div>
+            <p style={{ margin: '0 0 16px', fontSize: 14 }}>送信しました。担当者よりご連絡いたします。</p>
+            <button onClick={onClose} style={{
+              padding: '8px 20px', fontSize: 13, fontWeight: 600, borderRadius: 8,
+              background: primaryColor, color: '#fff', border: 'none', cursor: 'pointer',
+            }}>閉じる</button>
+          </div>
+        ) : (
+          <>
+            <h2 style={{ fontSize: 16, fontWeight: 700, margin: '0 0 4px' }}>スタッフに問い合わせ</h2>
+            <p style={{ fontSize: 12, color: '#64748b', margin: '0 0 16px' }}>
+              内容を送信すると担当者に届きます。これまでの会話内容も一緒に共有されます。
+            </p>
+            {err && <p style={{ color: '#dc2626', fontSize: 12, margin: '0 0 10px' }}>{err}</p>}
+            <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
+              {active.map(def => {
+                const cfg = fields.find(f => f.key === def.key)!
+                const isTextarea = def.key === 'body' || def.key === 'address'
+                const st: React.CSSProperties = {
+                  width: '100%', boxSizing: 'border-box', padding: '8px 10px', fontSize: 13,
+                  border: '1px solid #cbd5e1', borderRadius: 8, fontFamily: 'inherit',
+                  outline: 'none', resize: 'vertical',
+                }
+                return (
+                  <div key={def.key}>
+                    <label style={{ fontSize: 11, fontWeight: 600, color: '#64748b', display: 'block', marginBottom: 3 }}>
+                      {def.label}{cfg.required && <span style={{ color: '#ef4444', marginLeft: 2 }}>*</span>}
+                    </label>
+                    {isTextarea
+                      ? <textarea rows={4} style={st} value={values[def.key] ?? ''}
+                          onChange={e => setValues(v => ({ ...v, [def.key]: e.target.value }))} />
+                      : <input type={def.key === 'email' ? 'email' : def.key === 'phone' ? 'tel' : 'text'}
+                          style={st} value={values[def.key] ?? ''}
+                          onChange={e => setValues(v => ({ ...v, [def.key]: e.target.value }))} />
+                    }
+                  </div>
+                )
+              })}
+            </div>
+            <div style={{ display: 'flex', justifyContent: 'flex-end', gap: 8, marginTop: 18 }}>
+              <button onClick={onClose} style={{
+                padding: '8px 16px', fontSize: 13, borderRadius: 8, border: '1px solid #cbd5e1',
+                background: '#fff', color: '#334155', cursor: 'pointer',
+              }}>キャンセル</button>
+              <button onClick={submit} disabled={missing || submitting} style={{
+                padding: '8px 20px', fontSize: 13, fontWeight: 600, borderRadius: 8, border: 'none',
+                background: primaryColor, color: '#fff',
+                cursor: missing || submitting ? 'default' : 'pointer', opacity: missing || submitting ? 0.6 : 1,
+              }}>{submitting ? '送信中…' : '送信する'}</button>
+            </div>
+          </>
+        )}
+      </div>
+    </div>
+  )
+}
+
 function TypingIndicator({ color }: { color: string }) {
   return (
     <div style={{ display: 'flex', alignItems: 'center', gap: 4, padding: '12px 16px' }}>
@@ -64,6 +169,7 @@ export default function PublicChatPage() {
   const [formValues, setFormValues] = useState<Record<number, Record<string, string>>>({})
   const [formSubmitted, setFormSubmitted] = useState<Set<number>>(new Set())
   const [formSubmitting, setFormSubmitting] = useState<number | null>(null)
+  const [contactOpen, setContactOpen] = useState(false)
   const bottomRef = useRef<HTMLDivElement>(null)
   const textareaRef = useRef<HTMLTextAreaElement>(null)
 
@@ -217,6 +323,18 @@ export default function PublicChatPage() {
             オンライン
           </div>
         </div>
+        <button
+          onClick={() => setContactOpen(true)}
+          style={{
+            marginLeft: 'auto', flexShrink: 0,
+            background: 'rgba(255,255,255,0.18)', color: '#fff',
+            border: '1px solid rgba(255,255,255,0.35)', borderRadius: 8,
+            padding: '6px 12px', fontSize: 12, fontWeight: 600, cursor: 'pointer',
+            whiteSpace: 'nowrap',
+          }}
+        >
+          スタッフに問い合わせ
+        </button>
       </div>
 
       {/* Messages */}
@@ -407,6 +525,18 @@ export default function PublicChatPage() {
         </div>
       </div>
       </div>
+
+      {contactOpen && (
+        <StaffContactModal
+          fields={(() => {
+            const enabled = bot?.form_fields?.filter(f => f.enabled) ?? []
+            return enabled.length > 0 ? enabled : DEFAULT_CONTACT_FIELDS
+          })()}
+          primaryColor={primaryColor}
+          onClose={() => setContactOpen(false)}
+          onSubmit={values => submitPublicForm(slug!, conversationId, values)}
+        />
+      )}
     </div>
   )
 }

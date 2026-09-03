@@ -1,8 +1,40 @@
 import { useEffect, useState } from 'react'
-import { fetchFormSubmissions } from '../lib/apiClient'
-import type { FormSubmission } from '../types/api'
+import { fetchFormSubmissions, fetchConversation } from '../lib/apiClient'
+import type { FormSubmission, ConversationDetail } from '../types/api'
 import { FORM_FIELD_DEFS } from '../data/formFields'
 import Pagination, { usePagination } from '../components/Pagination'
+
+function ConversationTranscript({ id }: { id: string }) {
+  const [detail, setDetail] = useState<ConversationDetail | null>(null)
+  const [loading, setLoading] = useState(true)
+  useEffect(() => {
+    fetchConversation(id).then(setDetail).catch(() => setDetail(null)).finally(() => setLoading(false))
+  }, [id])
+
+  return (
+    <div style={{ marginTop: 12, paddingTop: 12, borderTop: '1px solid var(--gray-200)' }}>
+      <div style={{ fontSize: 11, fontWeight: 700, color: 'var(--gray-500)', marginBottom: 6 }}>会話ログ</div>
+      {loading ? (
+        <div style={{ fontSize: 13, color: 'var(--gray-400)' }}>読み込み中...</div>
+      ) : !detail || detail.messages.length === 0 ? (
+        <div style={{ fontSize: 13, color: 'var(--gray-400)' }}>会話はありません。</div>
+      ) : (
+        <div style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
+          {detail.messages.map(m => (
+            <div key={m.id} style={{
+              alignSelf: m.role === 'user' ? 'flex-end' : 'flex-start',
+              maxWidth: '80%', fontSize: 13, lineHeight: 1.5, whiteSpace: 'pre-wrap',
+              background: m.role === 'user' ? 'var(--brand)' : '#fff',
+              color: m.role === 'user' ? '#fff' : 'var(--gray-800)',
+              border: m.role === 'user' ? 'none' : '1px solid var(--gray-200)',
+              borderRadius: 10, padding: '6px 10px',
+            }}>{m.content}</div>
+          ))}
+        </div>
+      )}
+    </div>
+  )
+}
 
 export default function FormSubmissionsPage() {
   const [submissions, setSubmissions] = useState<FormSubmission[]>([])
@@ -18,7 +50,7 @@ export default function FormSubmissionsPage() {
     <div>
       <div className="page-header">
         <h1 className="page-title">問い合わせフォーム送信</h1>
-        <p className="page-desc">フォールバック時に送信されたお問い合わせ一覧です。</p>
+        <p className="page-desc">チャットから送信されたお問い合わせ一覧です（「スタッフに問い合わせ」ボタン / フォールバック時のフォーム）。</p>
       </div>
 
       <div className="card" style={{ padding: 0 }}>
@@ -69,6 +101,7 @@ export default function FormSubmissionsPage() {
                               </div>
                             )
                           })}
+                          {s.conversation_id && <ConversationTranscript id={s.conversation_id} />}
                         </div>
                       </td>
                     </tr>
